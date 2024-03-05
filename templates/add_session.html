@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Shooting Session</title>
+    <script>
+        // Function to add input fields for multiple usernames
+        function addUsernameInput() {
+            var usernameContainer = document.getElementById('username-container');
+            var newUsernameInput = document.createElement('input');
+            newUsernameInput.type = 'text';
+            newUsernameInput.name = 'usernames';
+            newUsernameInput.required = true;
+            newUsernameInput.placeholder = 'Enter username';
+            usernameContainer.appendChild(newUsernameInput);
+        }
+    </script>
+</head>
+<body>
+    <h1>Add Shooting Session</h1>
+    <form method="POST">
+        <div id="username-container">
+            <!-- Initial input field for username -->
+            <label for="username">Username:</label>
+            <input type="text" name="usernames" required>
+        </div>
+        <button type="button" onclick="addUsernameInput()">Add Username</button>
+        <br>
+        <label for="distance">Shooting Distance:</label>
+        <input type="number" name="distance" required>
+        <br>
+        <label for="shots_per_target">Shots per Target:</label>
+        <input type="number" name="shots_per_target" required>
+        <br>
+        <label for="target_type">Target Type:</label>
+        <input type="text" name="target_type" required>
+        <br>
+        <button type="submit">Add Session</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Details</title>
+</head>
+<body>
+    <h1>Session Details</h1>
+    <p>Session ID: {{ session_id }}</p>
+    <p>Distance: {{ distance }}</p>
+    <p>Shots per Target: {{ shots_per_target }}</p>
+    <p>Target Type: {{ target_type }}</p>
+    <p>... Add more details as needed</p>
+
+    <!-- You can provide links or buttons to navigate to other pages -->
+    <a href="{{ url_for('home') }}">Back to Home</a>
+</body>
+</html>

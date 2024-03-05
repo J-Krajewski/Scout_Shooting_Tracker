@@ -12,16 +12,24 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
-    scores = db.relationship('Score', backref='user', lazy=True)
+    #admin = db.Column(db.Boolean, nullable=False)
+    scores = db.relationship('ShootingSession', backref='user', lazy=True)
+    
 
-class Score(db.Model):
+class ShootingSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    value = db.Column(db.Integer, nullable=False)
+    distance = db.Column(db.Integer, nullable=False)
+    shots_per_target = db.Column(db.Integer, nullable=False)
+    target_type = db.Column(db.String(50), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
 
 # Create the database tables before running the app
 with app.app_context():
     db.create_all()
+
+
+
 
 @app.route('/')
 def home():
@@ -78,26 +86,52 @@ def logout():
     session.pop('username', None)
     return redirect(url_for('home'))
 
-@app.route('/add_score', methods=['GET', 'POST'])
-def add_score():
-    if 'username' not in session:
+@app.route('/add_session', methods=['GET', 'POST'])
+def add_session():
+    if 'username' not in session or session['username'] != 'admin':
         return redirect(url_for('login'))
-    
-    if request.method == 'POST':
 
+    if request.method == 'POST':
+        #username = request.form['username']
         username = session['username']
         user = User.query.filter_by(username=username).first()
 
         if user:
-            score_value = request.form.get('score')
-            if score_value is not None:
-                new_score = Score(value=int(score_value), user=user)
-                db.session.add(new_score)
-                db.session.commit()
-                return redirect(url_for('home'))
-            
+            distance = int(request.form['distance'])
+            shots_per_target = int(request.form['shots_per_target'])
+            target_type = request.form['target_type']
 
-    return render_template('add_score.html')
+            new_session = ShootingSession(distance=distance, shots_per_target=shots_per_target, target_type=target_type, user=user)
+            db.session.add(new_session)
+            db.session.commit()
+            return redirect(url_for('home'))
+
+    return render_template('add_session.html')
+
+@app.route('/run_session', methods=['GET', 'POST'])
+def run_session():
+    if 'username' not in session or session['username'] != 'admin':
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        # Process the form data and run the session
+        distance = int(request.form.get('distance'))
+        shots_per_target = int(request.form.get('shots_per_target'))
+        target_type = request.form.get('target_type')
+
+        # Create a new ShootingSession instance and add it to the database
+        session_usernames = request.form.getlist('usernames')
+        user = User.query.filter_by(username=session_usernames[0]).first()  # Assuming the first username is valid
+        new_session = ShootingSession(distance=distance, shots_per_target=shots_per_target, target_type=target_type, user=user)
+        db.session.add(new_session)
+        db.session.commit()
+
+        # Retrieve the newly created session ID
+        session_id = new_session.id
+
+        return render_template('session_details.html', session_id=session_id, distance=distance, shots_per_target=shots_per_target, target_type=target_type)
+
+    return render_template('run_session.html')
 
 
 if __name__ == '__main__':
