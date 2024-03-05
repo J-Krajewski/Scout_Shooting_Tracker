@@ -5,6 +5,8 @@ from sqlalchemy.exc import IntegrityError
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this to a secure secret key
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # Use SQLite database
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/site.db'
+
 db = SQLAlchemy(app)
 
 class User(db.Model):
