@@ -12,6 +12,12 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
+    scores = db.relationship('Score', backref='user', lazy=True)
+
+class Score(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    value = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 # Create the database tables before running the app
 with app.app_context():
@@ -71,6 +77,28 @@ def user_list():
 def logout():
     session.pop('username', None)
     return redirect(url_for('home'))
+
+@app.route('/add_score', methods=['GET', 'POST'])
+def add_score():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+
+        username = session['username']
+        user = User.query.filter_by(username=username).first()
+
+        if user:
+            score_value = request.form.get('score')
+            if score_value is not None:
+                new_score = Score(value=int(score_value), user=user)
+                db.session.add(new_score)
+                db.session.commit()
+                return redirect(url_for('home'))
+            
+
+    return render_template('add_score.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)
