@@ -6,15 +6,15 @@
     <title>Add Shooting Session</title>
     <script>
         // Function to add input fields for multiple usernames
-        function addUsernameInput() {
-            var usernameContainer = document.getElementById('username-container');
-            var newUsernameInput = document.createElement('input');
-            newUsernameInput.type = 'text';
-            newUsernameInput.name = 'usernames';
-            newUsernameInput.required = true;
-            newUsernameInput.placeholder = 'Enter username';
-            usernameContainer.appendChild(newUsernameInput);
-        }
+        //function addUsernameInput() {
+        //    var usernameContainer = document.getElementById('username-container');
+        //    var newUsernameInput = document.createElement('input');
+        //    newUsernameInput.type = 'text';
+        //    newUsernameInput.name = 'usernames';
+        //    newUsernameInput.required = true;
+        //   newUsernameInput.placeholder = 'Enter username';
+        //    usernameContainer.appendChild(newUsernameInput);
+        //}
     </script>
 </head>
 <body>
@@ -25,6 +25,13 @@
             <label for="username">Username:</label>
             <input type="text" name="usernames" required>
         </div>
+
+        <label for="search">Search for Users:</label>
+        <input type="text" id="search" name="search" oninput="searchUsers()">
+        <div id="searchResults"></div>
+
+    
+
         <button type="button" onclick="addUsernameInput()">Add Username</button>
         <br>
         <label for="distance">Shooting Distance:</label>

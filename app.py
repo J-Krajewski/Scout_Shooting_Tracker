@@ -9,12 +9,19 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # Use SQLite databa
 
 db = SQLAlchemy(app)
 
+class Group(db.Model):
+    __tablename__ = "group"
+    id = db.Column(db.Integer, primary_key=True)
+    district = db.Column(db.String(100), nullable=True)
+    number = db.Column(db.Integer, nullable=True)
+
 class User(db.Model):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
-    #admin = db.Column(db.Boolean, nullable=False)
+    admin = db.Column(db.Boolean, nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
     #scores = db.relationship('Session', backref='user', lazy=True)
 
 class Format(db.Model):
@@ -48,12 +55,23 @@ class Shot(db.Model):
 with app.app_context():
     db.create_all()
 
+    def add_new_group(district, number):
+        existing_group = Group.query.filter_by(district=district, number=number).first()
+        if not existing_group:
+            new_group = Group(district=district, number=number)
+            db.session.add(new_group)
+            db.session.commit()
+            print(f"Added new group: {district}, Number: {number}")
+        else:
+            print(f"Group already exists: {district}, Number: {number}")
+
+    add_new_group("Whitley Bay", 9)
+    add_new_group("Teddington", 3)
+
+
 @app.route('/')
 def home():
-    if 'username' in session:
-        return f'Hello, {session["username"]}! <a href="/logout">Logout</a>'
-    else:
-        return 'You are not logged in. <a href="/login">Login</a> or <a href="/signup">Sign up</a>'
+     return render_template('home.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -76,23 +94,47 @@ def signup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        admin_checkbox_checked = 'admin' in request.form
+        district_name = request.form['district']
+        group_number = request.form['group_number']
+
 
         try:
-            new_user = User(username=username, password=password)
+            # Check if the district exists, and get the associated District object
+            district = Group.query.filter_by(district=district_name, number=group_number).first()
+
+            if not district:
+                return 'Group does not exist. <a href="/signup">Try a different group</a>'
+            
+            print(district.id)
+            print(int(district.id))
+
+            # Create a new user and assign the district and group
+            new_user = User(username=username, password=password, admin=admin_checkbox_checked, group_id=int(district.id))
+
             db.session.add(new_user)
             db.session.commit()
+
+            print("ADDED")
+
             session['username'] = username
+            session['admin'] = admin_checkbox_checked
+
+
             return redirect(url_for('home'))
         except IntegrityError:
             db.session.rollback()
             return 'Username already exists. <a href="/signup">Try a different username</a>'
 
-    return render_template('signup.html')
+
+    # Provide a list of existing groups for the user to choose from during signup
+    groups = Group.query.all()
+    return render_template('signup.html', groups=groups)
 
 @app.route('/users')
 def user_list():
     # Only allow access to the user list for an admin user (for demonstration purposes)
-    if 'username' in session and session['username'] == 'admin':
+    if 'username' in session and session['admin'] == True:
         users = User.query.all()
         return render_template('user_list.html', users=users)
     else:
@@ -105,7 +147,7 @@ def logout():
 
 @app.route('/add_session', methods=['GET', 'POST'])
 def add_session():
-    if 'username' not in session or session['username'] != 'admin':
+    if 'username' in session and session['admin'] == True:
         return redirect(url_for('login'))
 
     if request.method == 'POST':
@@ -145,7 +187,7 @@ def add_session():
 
 @app.route('/run_session', methods=['GET', 'POST'])
 def run_session():
-    if 'username' not in session or session['username'] != 'admin':
+    if 'username' in session and session['admin'] == True:
         return redirect(url_for('login'))
 
     # Retrieve session details from the Flask session
@@ -158,19 +200,15 @@ def run_session():
     if not all([session_id, distance, shots_per_target, target_type, usernames]):
         return redirect(url_for('add_session'))
     
-
     # For each user: display: 
     # Input for each shot, which appears (shots_per_target) number of times 
     
-
     # Clear the session details to avoid reusing them
     session.pop('session_id', None)
     session.pop('distance', None)
     session.pop('shots_per_target', None)
     session.pop('target_type', None)
     session.pop('usernames', None)
-
-
 
     # Use the retrieved session details as needed
 
@@ -180,7 +218,7 @@ def run_session():
 
 @app.route('/process_shots/<int:session_id>', methods=['GET', 'POST'])
 def process_shots(session_id):
-    if 'username' not in session or session['username'] != 'admin':
+    if 'username' in session and session['admin'] == True:
         return redirect(url_for('login'))
 
     shooting_session = Session.query.get(session_id)
@@ -200,11 +238,20 @@ def process_shots(session_id):
         return redirect(url_for('run_session'))
 
     user_ids = session.get('user_ids', [])
-    
+
     print(user_ids)
 
     return render_template('process_shots.html', session_id=session_id, user_ids=user_ids, shots_per_target=shooting_session.format.shots_per_target)
 
+@app.route('/search')
+def search():
+
+    if 'username' in session and session['admin'] == True:
+        return redirect(url_for('login'))
+
+    users = User.query.all()
+    return render_template('search.html', users=users)
+ 
 
 if __name__ == '__main__':
     app.run(debug=True)

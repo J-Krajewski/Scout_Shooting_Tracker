@@ -8,11 +8,23 @@
 <body>
     <h2>Sign up</h2>
     <form method="post" action="/signup">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br>
+        
+    <label for="username">Username:</label>
+    <input type="text" name="username" required>
 
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br>
+    <label for="password">Password:</label>
+    <input type="password" name="password" required>
+
+    <label for="district">District:</label>
+    <input type="text" name="district" required>
+
+    <label for="group_number">Group Number:</label>
+    <input type="number" name="group_number" required>
+
+    <label for="admin">Admin:</label>
+    <input type="checkbox" name="admin">
+
+    <button type="submit">Sign Up</button>
 
         <button type="submit">Sign up</button>
     </form>

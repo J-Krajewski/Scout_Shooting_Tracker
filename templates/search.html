@@ -1,0 +1,17 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1 class="title">{% block title %} Scouts {% endblock %}</h1>
+    <div class="content">
+        {% for user in users %}
+            <div class="student">
+                <p><b>#{{ user.id }}</b></p>
+                <b>
+                    <p class="name">{{ user.username}}</p>
+                </b>
+                
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
