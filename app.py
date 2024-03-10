@@ -15,23 +15,38 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
     #admin = db.Column(db.Boolean, nullable=False)
-    scores = db.relationship('ShootingSession', backref='user', lazy=True)
-    
+    #scores = db.relationship('Session', backref='user', lazy=True)
 
-class ShootingSession(db.Model):
+class Format(db.Model):
+    __tablename__ = "format"
     id = db.Column(db.Integer, primary_key=True)
-    distance = db.Column(db.Integer, nullable=False)
     shots_per_target = db.Column(db.Integer, nullable=False)
     target_type = db.Column(db.String(50), nullable=False)
+    distance = db.Column(db.Integer, nullable=False)
+    
+class Session(db.Model):
+    __tablename__ = "session"
+    id = db.Column(db.Integer, primary_key=True) 
+    description = db.Column(db.String(100), nullable=True)
+    date = db.Column(db.String(100), nullable=True) # CHANGE TO GET ON CREATION
+
+class Score(db.Model):
+    __tablename__ = "score"
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('session.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    format_id = db.Column(db.Integer, db.ForeignKey('format.id'), nullable=False)
+
+class Shot(db.Model):
+    __tablename__ = "shots"
+    id = db.Column(db.Integer, primary_key=True)
+    score_id = db.Column(db.Integer, db.ForeignKey('score.id'), nullable=False)
+    shot_score = db.Column(db.Integer, primary_key=True)
 
 
 # Create the database tables before running the app
 with app.app_context():
     db.create_all()
-
-
-
 
 @app.route('/')
 def home():
@@ -94,19 +109,37 @@ def add_session():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        #username = request.form['username']
         username = session['username']
         user = User.query.filter_by(username=username).first()
 
         if user:
+            # Getting data from add_session.html
             distance = int(request.form['distance'])
             shots_per_target = int(request.form['shots_per_target'])
             target_type = request.form['target_type']
+            description = request.form['description']
+            usernames = request.form.getlist('usernames')
+            # TO DO: GET DATE TIME ADD TO SESSION 
+            # TO DO: FORMAT CREATES NEW FORMAT ENTRY EVERY TIME, SIMPLIFY
 
-            new_session = ShootingSession(distance=distance, shots_per_target=shots_per_target, target_type=target_type, user=user)
+            # Adding data to respective tables
+            new_session = Session(description=description)
+            new_format = Format(target_type=target_type, shots_per_target=shots_per_target, distance=distance) 
+            
             db.session.add(new_session)
+            db.session.add(new_format)
             db.session.commit()
-            return redirect(url_for('home'))
+
+            # Store session details in the Flask session for use in run_session
+            session['session_id'] = new_session.id
+            session['distance'] = distance
+            session['shots_per_target'] = shots_per_target
+            session['target_type'] = target_type
+            session['usernames'] = usernames
+
+            print(usernames)
+
+            return redirect(url_for('run_session'))
 
     return render_template('add_session.html')
 
@@ -115,25 +148,62 @@ def run_session():
     if 'username' not in session or session['username'] != 'admin':
         return redirect(url_for('login'))
 
-    if request.method == 'POST':
-        # Process the form data and run the session
-        distance = int(request.form.get('distance'))
-        shots_per_target = int(request.form.get('shots_per_target'))
-        target_type = request.form.get('target_type')
+    # Retrieve session details from the Flask session
+    session_id = session.get('session_id')
+    distance = session.get('distance')
+    shots_per_target = session.get('shots_per_target')
+    target_type = session.get('target_type')
+    usernames = session.get('usernames')
 
-        # Create a new ShootingSession instance and add it to the database
-        session_usernames = request.form.getlist('usernames')
-        user = User.query.filter_by(username=session_usernames[0]).first()  # Assuming the first username is valid
-        new_session = ShootingSession(distance=distance, shots_per_target=shots_per_target, target_type=target_type, user=user)
-        db.session.add(new_session)
+    if not all([session_id, distance, shots_per_target, target_type, usernames]):
+        return redirect(url_for('add_session'))
+    
+
+    # For each user: display: 
+    # Input for each shot, which appears (shots_per_target) number of times 
+    
+
+    # Clear the session details to avoid reusing them
+    session.pop('session_id', None)
+    session.pop('distance', None)
+    session.pop('shots_per_target', None)
+    session.pop('target_type', None)
+    session.pop('usernames', None)
+
+
+
+    # Use the retrieved session details as needed
+
+    return render_template('run_session.html', 
+        session_id=session_id, distance=distance, shots_per_target=shots_per_target, 
+        target_type=target_type, usernames=usernames)
+
+@app.route('/process_shots/<int:session_id>', methods=['GET', 'POST'])
+def process_shots(session_id):
+    if 'username' not in session or session['username'] != 'admin':
+        return redirect(url_for('login'))
+
+    shooting_session = Session.query.get(session_id)
+
+    if not shooting_session:
+        return redirect(url_for('add_session'))
+
+    if request.method == 'POST':
+        for user_id in session.get('user_ids', []):
+            for i in range(shooting_session.format.shots_per_target):
+                shot_score_value = int(request.form.get(f'user_{user_id}_shot_{i+1}', 0))
+                shot = Shot(score_id=user_id, shot_score=shot_score_value)
+                db.session.add(shot)
+
         db.session.commit()
 
-        # Retrieve the newly created session ID
-        session_id = new_session.id
+        return redirect(url_for('run_session'))
 
-        return render_template('session_details.html', session_id=session_id, distance=distance, shots_per_target=shots_per_target, target_type=target_type)
+    user_ids = session.get('user_ids', [])
+    
+    print(user_ids)
 
-    return render_template('run_session.html')
+    return render_template('process_shots.html', session_id=session_id, user_ids=user_ids, shots_per_target=shooting_session.format.shots_per_target)
 
 
 if __name__ == '__main__':

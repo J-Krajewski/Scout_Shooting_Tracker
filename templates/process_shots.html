@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Shots</title>
+</head>
+<body>
+    <h1>Process Shots</h1>
+    <p>Session ID: {{ session_id }}</p>
+    <p>Shots per Target: {{ shots_per_target }}</p>
+
+    <form method="POST">
+        {% for user_id in user_ids %}
+            <h3>User {{ user_id }}</h3>
+            {% for i in range(shots_per_target) %}
+                <label for="user_{{ user_id }}_shot_{{ i+1 }}">Shot {{ i+1 }}:</label>
+                <input type="number" name="user_{{ user_id }}_shot_{{ i+1 }}" required>
+                <br>
+            {% endfor %}
+        {% endfor %}
+        <button type="submit">Submit Scores</button>
+    </form>
+
+    <!-- You can provide links or buttons to navigate to other pages -->
+    <a href="{{ url_for('run_session') }}">Back to Run Session</a>
+</body>
+</html>
