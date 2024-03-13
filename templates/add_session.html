@@ -83,16 +83,6 @@
         <button type="submit">Add Session</button>
     </form>
 
-    <!-- Display selected users -->
-    <h2>Selected Users:</h2>
     
-    <ul>
-        {% for user_id in session.get('users', []) %}
-            {% set user = users|selectattr('id', 'equalto', user_id)|default(none) %}
-            {% if user %}
-                <li>{{ user.username }}</li>
-            {% endif %}
-        {% endfor %}
-    </ul>
 </body>
 </html>

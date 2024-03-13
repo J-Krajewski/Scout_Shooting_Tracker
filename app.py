@@ -164,7 +164,7 @@ def add_session():
             target_type = request.form['target_type']
             description = request.form['description']
             #users = request.form.getlist('users')
-            users = session.get('users')
+            shooters = session.get('shooters')
             # TO DO: GET DATE TIME ADD TO SESSION 
             # TO DO: FORMAT CREATES NEW FORMAT ENTRY EVERY TIME, SIMPLIFY
 
@@ -182,11 +182,11 @@ def add_session():
             session['shots_per_target'] = shots_per_target
             session['target_type'] = target_type
 
-            print("/add_session: users", users)
+            print("/add_session: shooters", shooters)
 
             #session['users'] = users
 
-            print("/add_session: session['users]:", session.get('users'))
+            print("/add_session: session['shooters']:", session.get('shooters'))
 
             return redirect(url_for('run_session'))
 
@@ -216,17 +216,18 @@ def search_users():
 
 @app.route('/add_user_to_session', methods=['POST'])
 def add_user_to_session():
-    user_id = request.form.get('user_id')
-    session_users = session.get('users', [])
+    ## Getting this from the search function in add_session 
+    shooter_id = request.form.get('user_id')
+    session_shooters = session.get('shooters', [])
 
-    print("/add_user_to_session: user_id:", user_id)
-    print("/add_user_to_session: session_users", session_users)
+    print("/add_user_to_session: shooter_id:", shooter_id)
+    print("/add_user_to_session: session_shooters", session_shooters)
     
-    if user_id:
+    if shooter_id:
         # Check if the user is already in the session
-        if user_id not in session_users:
-            session_users.append(user_id)
-            session['users'] = session_users
+        if shooter_id not in session_shooters:
+            session_shooters.append(shooter_id)
+            session['shooters'] = session_shooters
 
     # Retrieve the list of groups for rendering the template
     groups = Group.query.all()
@@ -234,10 +235,10 @@ def add_user_to_session():
     # Retrieve the list of users for rendering the template
     users = User.query.all()
     
-    print("/add_user_to_session: groups: ", groups)
-    print("/add_user_to_session: users: ", users)
+    #print("/add_user_to_session: groups: ", groups)
+    #print("/add_user_to_session: users: ", users)
 
-    print("/add_user_to_session: session['users']: ", session.get('users'))
+    print("/add_user_to_session: session['shooters']: ", session.get('shooters'))
     
     return render_template('add_session.html', groups=groups, users=users)
 
@@ -247,41 +248,50 @@ def run_session():
     if 'username' in session and session['admin'] == True:
         return redirect(url_for('login'))
 
+    # Initialize shooters_username outside the if block
+    shooters_username = []
+
     # Retrieve session details from the Flask session
     session_id = session.get('session_id')
     distance = session.get('distance')
     shots_per_target = session.get('shots_per_target')
     target_type = session.get('target_type')
-    users = session.get('users')
+    shooters = session.get('shooters')
 
-    print("users: ", users)
+    # Check if shooters is not None before using it in the query
+    if shooters is not None:
+        # Fetch user objects from the database based on the IDs
+        users = User.query.filter(User.id.in_(shooters)).all()
 
-    if not all([session_id, distance, shots_per_target, target_type, users]):
+        # Extract usernames from the user objects
+        shooters_username = [user.username for user in users]
+
+    if not all([session_id, distance, shots_per_target, target_type, shooters, shooters_username]):
         print("session_id:", session_id)
         print("distance:", distance)
         print("shot_per_target:", shots_per_target)
         print("target_type:", target_type)
-        print("users:", users)
+        print("shooters:", shooters)
+        print("shooters_username:", shooters_username)
         return redirect(url_for('add_session'))
-    
 
-    
     # For each user: display: 
     # Input for each shot, which appears (shots_per_target) number of times 
     
     # Clear the session details to avoid reusing them
-    session.pop('session_id', None)
-    session.pop('distance', None)
-    session.pop('shots_per_target', None)
-    session.pop('target_type', None)
-    session.pop('users', None)
-    
+    #session.pop('session_id', None)
+    #session.pop('distance', None)
+    #session.pop('shots_per_target', None)
+    #session.pop('target_type', None)
+    #session.pop('shooters', None)
+    #session.pop('shooters_username', None)
 
     # Use the retrieved session details as needed
 
     return render_template('run_session.html', 
         session_id=session_id, distance=distance, shots_per_target=shots_per_target, 
-        target_type=target_type, users=users)
+        target_type=target_type, shooters=shooters, shooters_username=shooters_username)
+
 
 @app.route('/process_shots/<int:session_id>', methods=['GET', 'POST'])
 def process_shots(session_id):
@@ -292,10 +302,15 @@ def process_shots(session_id):
 
     if not shooting_session:
         return redirect(url_for('add_session'))
+    
+    print("ADDING SHOTS TO DATABASE")
+
+    #user_ids = session.get('shooters')
+    shots_per_target = session.get('shots_per_target')
 
     if request.method == 'POST':
-        for user_id in session.get('user_ids', []):
-            for i in range(shooting_session.format.shots_per_target):
+        for user_id in session.get('shooters', []):
+            for i in range(shots_per_target):
                 shot_score_value = int(request.form.get(f'user_{user_id}_shot_{i+1}', 0))
                 shot = Shot(score_id=user_id, shot_score=shot_score_value)
                 db.session.add(shot)

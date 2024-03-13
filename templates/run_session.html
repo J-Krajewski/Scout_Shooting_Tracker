@@ -11,9 +11,10 @@
     <p>Distance: {{ distance }}</p>
     <p>Shots per Target: {{ shots_per_target }}</p>
     <p>Target Type: {{ target_type }}</p>
-    <p>User List: {{ users }}</p>
+    <p>Shooter ID List: {{ shooters }}</p>
+    <p>Shooter Username List: {{ shooters_username }}</p>
 
-    {% for username in users %}
+    {% for username in shooters_username %}
         <div>
             <h2>{{ username }}</h2>
             <form method="POST" action="{{ url_for('process_shots', session_id=session_id) }}">
