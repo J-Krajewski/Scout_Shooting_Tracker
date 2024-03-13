@@ -4,17 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Shooting Session</title>
+
+    <!-- Include jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <!-- Include the dynamic user search script -->
     <script>
-        // Function to add input fields for multiple usernames
-        //function addUsernameInput() {
-        //    var usernameContainer = document.getElementById('username-container');
-        //    var newUsernameInput = document.createElement('input');
-        //    newUsernameInput.type = 'text';
-        //    newUsernameInput.name = 'usernames';
-        //    newUsernameInput.required = true;
-        //   newUsernameInput.placeholder = 'Enter username';
-        //    usernameContainer.appendChild(newUsernameInput);
-        //}
+        function searchUsers() {
+            var searchQuery = $('#search').val();
+
+            $.ajax({
+                url: '/search_users',
+                method: 'POST',
+                data: { search_query: searchQuery },
+                success: function(response) {
+                    var users = response.users;
+                    var searchResults = $('#searchResults');
+
+                    searchResults.empty();
+
+                    if (users.length > 0) {
+                        users.forEach(function(user) {
+                            var result = $('<div>').text(user.username);
+                            searchResults.append(result);
+                        });
+                    } else {
+                        searchResults.append('<div>No users found</div>');
+                    }
+                }
+            });
+        }
+
+        function addUsernameInput() {
+            var usernameContainer = $('#username-container');
+            var newInput = $('<input>').attr({
+                type: 'text',
+                name: 'usernames',
+                required: true
+            });
+
+            usernameContainer.append(newInput);
+        }
     </script>
 </head>
 <body>
@@ -29,8 +59,6 @@
         <label for="search">Search for Users:</label>
         <input type="text" id="search" name="search" oninput="searchUsers()">
         <div id="searchResults"></div>
-
-    
 
         <button type="button" onclick="addUsernameInput()">Add Username</button>
         <br>

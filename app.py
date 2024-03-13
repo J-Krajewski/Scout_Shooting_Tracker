@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
+from flask import jsonify
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this to a secure secret key
@@ -182,8 +183,25 @@ def add_session():
             print(usernames)
 
             return redirect(url_for('run_session'))
+        
+    groups = Group.query.all()
 
     return render_template('add_session.html')
+
+@app.route('/search_users', methods=['POST'])
+def search_users():
+    search_query = request.form.get('search_query')
+
+    print(search_query)
+
+    if not search_query:
+        return jsonify({'error': 'Invalid search query'})
+
+    users = User.query.filter(User.username.ilike(f'%{search_query}%')).all()
+
+    user_list = [{'id': user.id, 'username': user.username} for user in users]
+
+    return jsonify({'users': user_list})
 
 @app.route('/run_session', methods=['GET', 'POST'])
 def run_session():
