@@ -25,7 +25,12 @@
 
                     if (users.length > 0) {
                         users.forEach(function(user) {
-                            var result = $('<div>').text(user.username);
+                            var result = $('<div>').text(user.username)
+                                                  .attr('data-user-id', user.id)
+                                                  .addClass('search-result')
+                                                  .click(function() {
+                                                      addUserToSession(user.id);
+                                                  });
                             searchResults.append(result);
                         });
                     } else {
@@ -35,32 +40,33 @@
             });
         }
 
-        function addUsernameInput() {
-            var usernameContainer = $('#username-container');
-            var newInput = $('<input>').attr({
-                type: 'text',
-                name: 'usernames',
-                required: true
+        function addUserToSession(userId) {
+            $.ajax({
+                url: '/add_user_to_session',
+                method: 'POST',
+                data: { user_id: userId },
+                success: function(response) {
+                    if (response.success) {
+                        // Reload the page to update the selected users list
+                        location.reload();
+                    }
+                }
             });
-
-            usernameContainer.append(newInput);
         }
     </script>
 </head>
 <body>
     <h1>Add Shooting Session</h1>
     <form method="POST">
-        <div id="username-container">
-            <!-- Initial input field for username -->
+        <!--div id="username-container">
             <label for="username">Username:</label>
             <input type="text" name="usernames" required>
-        </div>
+        </div-->
 
         <label for="search">Search for Users:</label>
         <input type="text" id="search" name="search" oninput="searchUsers()">
         <div id="searchResults"></div>
 
-        <button type="button" onclick="addUsernameInput()">Add Username</button>
         <br>
         <label for="distance">Shooting Distance:</label>
         <input type="number" name="distance" required>
@@ -76,5 +82,17 @@
         <br>
         <button type="submit">Add Session</button>
     </form>
+
+    <!-- Display selected users -->
+    <h2>Selected Users:</h2>
+    
+    <ul>
+        {% for user_id in session.get('users', []) %}
+            {% set user = users|selectattr('id', 'equalto', user_id)|default(none) %}
+            {% if user %}
+                <li>{{ user.username }}</li>
+            {% endif %}
+        {% endfor %}
+    </ul>
 </body>
 </html>

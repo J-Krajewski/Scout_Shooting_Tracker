@@ -1,7 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
-from flask import jsonify
+from flask import jsonify, request, render_template, redirect, url_for, session
+
+
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this to a secure secret key
@@ -161,14 +163,15 @@ def add_session():
             shots_per_target = int(request.form['shots_per_target'])
             target_type = request.form['target_type']
             description = request.form['description']
-            usernames = request.form.getlist('usernames')
+            #users = request.form.getlist('users')
+            users = session.get('users')
             # TO DO: GET DATE TIME ADD TO SESSION 
             # TO DO: FORMAT CREATES NEW FORMAT ENTRY EVERY TIME, SIMPLIFY
 
             # Adding data to respective tables
             new_session = Session(description=description)
             new_format = Format(target_type=target_type, shots_per_target=shots_per_target, distance=distance) 
-            
+
             db.session.add(new_session)
             db.session.add(new_format)
             db.session.commit()
@@ -178,30 +181,66 @@ def add_session():
             session['distance'] = distance
             session['shots_per_target'] = shots_per_target
             session['target_type'] = target_type
-            session['usernames'] = usernames
 
-            print(usernames)
+            print("/add_session: users", users)
+
+            #session['users'] = users
+
+            print("/add_session: session['users]:", session.get('users'))
 
             return redirect(url_for('run_session'))
-        
+
     groups = Group.query.all()
 
-    return render_template('add_session.html')
+    return render_template('add_session.html', groups=groups)
 
 @app.route('/search_users', methods=['POST'])
 def search_users():
     search_query = request.form.get('search_query')
 
-    print(search_query)
+    print("/search_users: search_query: ", search_query)
 
     if not search_query:
         return jsonify({'error': 'Invalid search query'})
 
     users = User.query.filter(User.username.ilike(f'%{search_query}%')).all()
 
+    print("/search_users: users: ", search_query)
+
     user_list = [{'id': user.id, 'username': user.username} for user in users]
 
+    print("/search_users: user_list: ", user_list)
+
     return jsonify({'users': user_list})
+
+
+@app.route('/add_user_to_session', methods=['POST'])
+def add_user_to_session():
+    user_id = request.form.get('user_id')
+    session_users = session.get('users', [])
+
+    print("/add_user_to_session: user_id:", user_id)
+    print("/add_user_to_session: session_users", session_users)
+    
+    if user_id:
+        # Check if the user is already in the session
+        if user_id not in session_users:
+            session_users.append(user_id)
+            session['users'] = session_users
+
+    # Retrieve the list of groups for rendering the template
+    groups = Group.query.all()
+
+    # Retrieve the list of users for rendering the template
+    users = User.query.all()
+    
+    print("/add_user_to_session: groups: ", groups)
+    print("/add_user_to_session: users: ", users)
+
+    print("/add_user_to_session: session['users']: ", session.get('users'))
+    
+    return render_template('add_session.html', groups=groups, users=users)
+
 
 @app.route('/run_session', methods=['GET', 'POST'])
 def run_session():
@@ -213,10 +252,19 @@ def run_session():
     distance = session.get('distance')
     shots_per_target = session.get('shots_per_target')
     target_type = session.get('target_type')
-    usernames = session.get('usernames')
+    users = session.get('users')
 
-    if not all([session_id, distance, shots_per_target, target_type, usernames]):
+    print("users: ", users)
+
+    if not all([session_id, distance, shots_per_target, target_type, users]):
+        print("session_id:", session_id)
+        print("distance:", distance)
+        print("shot_per_target:", shots_per_target)
+        print("target_type:", target_type)
+        print("users:", users)
         return redirect(url_for('add_session'))
+    
+
     
     # For each user: display: 
     # Input for each shot, which appears (shots_per_target) number of times 
@@ -226,13 +274,14 @@ def run_session():
     session.pop('distance', None)
     session.pop('shots_per_target', None)
     session.pop('target_type', None)
-    session.pop('usernames', None)
+    session.pop('users', None)
+    
 
     # Use the retrieved session details as needed
 
     return render_template('run_session.html', 
         session_id=session_id, distance=distance, shots_per_target=shots_per_target, 
-        target_type=target_type, usernames=usernames)
+        target_type=target_type, users=users)
 
 @app.route('/process_shots/<int:session_id>', methods=['GET', 'POST'])
 def process_shots(session_id):
