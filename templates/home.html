@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <title>Home Page</title>
 </head>
 <body>
@@ -14,10 +14,16 @@
             <a href="home">Home</a>
             <a href="run_event">Run Shooting Event</a>
             <a href="add_event">Add Shooting Event</a>
-            <div class="navbar-right">
-                <a href="login">Login</a>
-                <a href="signup">Sign Up</a>
-            </div>
+            <a href="review_scores">Review Scores</a>
+                <div class="navbar-right"></div>
+                    {% if 'username' in session %}
+                        <a href="{{ url_for('logout') }}">Logout</a>
+                        <a href="{{ url_for('my_profile') }}">My Profile</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}">Login</a>
+                        <a href="{{ url_for('signup') }}">Sign Up</a>
+                    {% endif %}
+                </div>
         </div>
     </nav>
 

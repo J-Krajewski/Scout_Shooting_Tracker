@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Scores</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <h1>Review Scores</h1>
+
+    <form id="searchForm">
+        <label for="searchQuery">Search User:</label>
+        <input type="text" id="searchQuery" name="searchQuery">
+        <button type="submit">Search</button>
+    </form>
+
+    <div id="searchResults"></div>
+
+    <hr>
+
+    <div id="selectedUserScores">
+        <h2>Scores for Selected User:</h2>
+        <ul id="scoresList">
+            <!-- Scores will be dynamically loaded here -->
+        </ul>
+    </div>
+
+    <script>
+        $(document).ready(function(){
+            $('#searchForm').submit(function(event){
+                event.preventDefault();
+                var searchQuery = $('#searchQuery').val();
+                $.ajax({
+                    url: '/search_users',
+                    method: 'POST',
+                    data: {search_query: searchQuery},
+                    success: function(response){
+                        var users = response.users;
+                        var html = '<h2>Search Results:</h2>';
+                        users.forEach(function(user){
+                            html += '<input type="checkbox" class="userCheckbox" value="' + user.id + '"> ' + user.username + '<br>';
+                        });
+                        $('#searchResults').html(html);
+                    },
+                    error: function(xhr, status, error){
+                        console.error(error);
+                    }
+                });
+            });
+
+            $('#searchResults').on('change', '.userCheckbox', function(){
+                var userId = $(this).val();
+                if ($(this).is(':checked')) {
+                    $.ajax({
+                        url: '/get_user_scores/' + userId,
+                        method: 'GET',
+                        success: function(response){
+                            var scores = response.scores;
+                            var html = '';
+                            scores.forEach(function(score){
+                                html += '<li>Shot Score: ' + score.shot_score + '</li>';
+                            });
+                            $('#scoresList').html(html);
+                        },
+                        error: function(xhr, status, error){
+                            console.error(error);
+                        }
+                    });
+                }
+                else {
+                    $('#scoresList').empty();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

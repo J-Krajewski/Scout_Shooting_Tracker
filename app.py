@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 from flask import jsonify, request, render_template, redirect, url_for, session
+from collections import defaultdict
 
 
 
@@ -25,7 +26,7 @@ class User(db.Model):
     password = db.Column(db.String(120), nullable=False)
     admin = db.Column(db.Boolean, nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
-    #scores = db.relationship('Session', backref='user', lazy=True)
+    #scores = db.relationship('Event', backref='user', lazy=True)
 
 class Format(db.Model):
     __tablename__ = "format"
@@ -43,7 +44,7 @@ class Event(db.Model):
 class Score(db.Model):
     __tablename__ = "score"
     id = db.Column(db.Integer, primary_key=True)
-    shooting_event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     format_id = db.Column(db.Integer, db.ForeignKey('format.id'), nullable=False)
 
@@ -219,6 +220,35 @@ def search_users():
     return jsonify({'users': user_list})
 
 
+@app.route('/review_scores')
+def review_scores():
+    return render_template('review_scores.html')
+
+from collections import defaultdict
+
+@app.route('/get_user_scores/<int:user_id>')
+def get_user_scores(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'})
+
+    scores = Score.query.filter_by(user_id=user_id).all()
+    session_dict = defaultdict(list)
+
+    for score in scores:
+        shots = Shot.query.filter_by(score_id=score.id).all()
+        shot_scores = [shot.shot_score for shot in shots]
+        session_dict[(score.event_id, score.format_id)].append(shot_scores)
+
+    # Convert defaultdict to list of dictionaries
+    session_list = [{'event_id': session[0], 'format_id': session[1], 'shot_scores': scores} for session, scores in session_dict.items()]
+
+    print("SESSION LIST",session_list)
+
+
+    return jsonify({'sessions': session_list})
+
+
 @app.route('/add_user_to_event', methods=['POST'])
 def add_user_to_event():
     ## Getting this from the search function in add_event
@@ -341,6 +371,26 @@ def process_shooter(event_id):
                 user_shot_data.append(shot_score)
             shot_data[username] = user_shot_data
 
+            # Add shot data to the database
+            user = User.query.filter_by(username=username).first()
+            if user:
+                event = Event.query.get(event_id)
+                event_format = Format.query.filter_by(shots_per_target=shots_per_target, target_type=target_type, distance=distance).first()
+                
+                if event and event_format:
+                    score = Score(event_id=event.id, user_id=user.id, format_id=event_format.id)
+                    db.session.add(score)
+                    db.session.commit()
+
+                    for shot_score in user_shot_data:
+                        shot = Shot(score_id=score.id, shot_score=shot_score)
+                        db.session.add(shot)
+                        db.session.commit()
+                else:
+                    print("Shooting event or format not found")
+            else:
+                print("User not found")
+
         # Now shot_data is a dictionary where keys are usernames and values are lists of shot scores
         print("Shot data:", shot_data)
 
@@ -357,6 +407,10 @@ def search():
 
     users = User.query.all()
     return render_template('search.html', users=users)
+
+@app.route('/my_profile')
+def my_profile():
+    return render_template('my_profile.html')
  
 
 if __name__ == '__main__':
