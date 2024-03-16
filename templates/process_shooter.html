@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Shooter</title>
+    <link rel="stylesheet" href="process_shooter_style.css">
+</head>
+<body>
+    <h1>Process Shots</h1>
+    <p>Event ID: {{ event_id }}</p>
+    <p>Shots per Target: {{ shots_per_target }}</p>
+
+    <table>
+        <thead>
+          <tr>
+            <th>Shooter</th>
+            {% for i in range(shots_per_target) %}
+                <th>Shot {{ i+1 }} Score</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+        {% for username, scores in shot_data.items() %}
+         <tr>
+             <td> {{ username }} </td>
+             {% for score in scores %}
+                 <td> {{ score }} </td>
+             {% endfor %}
+         </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+
+    <!-- You can provide links or buttons to navigate to other pages -->
+    <a href="{{ url_for('run_event') }}">Back to Run Event</a>
+</body>
+</html>

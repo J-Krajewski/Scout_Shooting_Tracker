@@ -269,6 +269,8 @@ def run_event():
 
         # Extract usernames from the user objects
         shooters_username = [user.username for user in users]
+    
+    session['shooters_username'] = shooters_username
 
     if not all([event_id, distance, shots_per_target, target_type, shooters, shooters_username]):
         print("event_id:", event_id)
@@ -293,13 +295,6 @@ def run_event():
 
     # Use the retrieved session details as needed
 
-    print("event_id:", event_id)
-    print("distance:", distance)
-    print("shot_per_target:", shots_per_target)
-    print("target_type:", target_type)
-    print("shooters:", shooters)
-    print("shooters_username:", shooters_username)
-
     return render_template('run_event.html', 
         event_id=event_id, 
         distance=distance, 
@@ -308,38 +303,51 @@ def run_event():
         shooters=shooters, 
         shooters_username=shooters_username)
 
-
-@app.route('/process_shots/<int:event_id>', methods=['GET', 'POST'])
-def process_shots(event_id):
-    if 'username' in session and session['admin'] == False:
+@app.route('/process_shooter/<int:event_id>', methods=['GET', 'POST'])
+def process_shooter(event_id):
+    if 'username' not in session or session['admin'] == False:
         print("Admin is False or Username not in session ")
         print(session)
         return redirect(url_for('login'))
-
-   
-    # Get the session details
+    
+    event_id = session.get('event_id')
+    distance = session.get('distance')
     shots_per_target = session.get('shots_per_target')
+    target_type = session.get('target_type')
+    shooters = session.get('shooters')
+    shooters_username = session.get('shooters_username')
+
+    print("event_id:", event_id)
+    print("distance:", distance)
+    print("shot_per_target:", shots_per_target)
+    print("target_type:", target_type)
+    print("shooters:", shooters)
+    print("shooters_username:", shooters_username)
 
     # Initialize a dictionary to store shot data for each user
     shot_data = {}
 
-    # Iterate over the form data to extract shot scores for each user
-    for username in session.get('shooters_username', []):
-        user_shot_data = []
-        for i in range(1, shots_per_target + 1):
-            shot_key = f'user_{username}_shot_{i}'
-            shot_score = int(request.form.get(shot_key, 0))
-            user_shot_data.append(shot_score)
-        shot_data[username] = user_shot_data
+    if request.method == 'POST':
+        selected_users = request.form.getlist('selected_users[]')
+        print(selected_users)
 
-    # Now shot_data is a dictionary where keys are usernames and values are lists of shot scores
-    print("Shot data:", shot_data)
+        for username in selected_users:
+            user_shot_data = []
+            for i in range(1, shots_per_target + 1):
+                shot_key = f'user_{username}_shot_{i}'
+                print("shot key:", shot_key)
+                shot_score = int(request.form.get(shot_key, 0))
+                print("shot score:", shot_score)
+                user_shot_data.append(shot_score)
+            shot_data[username] = user_shot_data
 
-    # Here you can process the shot data and save it to the database
+        # Now shot_data is a dictionary where keys are usernames and values are lists of shot scores
+        print("Shot data:", shot_data)
 
-    ## NEED TO FIND WHAT user_ids are 
+        # Here you can process the shot data and save it to the database
 
-    return render_template('process_shots.html', event_id=event_id, user_ids=user_ids, shots_per_target=shooting_session.format.shots_per_target)
+    return render_template('process_shooter.html', event_id=event_id, shot_data=shot_data, shots_per_target=shots_per_target)
+
 
 @app.route('/search')
 def search():
