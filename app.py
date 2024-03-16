@@ -34,8 +34,8 @@ class Format(db.Model):
     target_type = db.Column(db.String(50), nullable=False)
     distance = db.Column(db.Integer, nullable=False)
     
-class Session(db.Model):
-    __tablename__ = "session"
+class Event(db.Model):
+    __tablename__ = "event"
     id = db.Column(db.Integer, primary_key=True) 
     description = db.Column(db.String(100), nullable=True)
     date = db.Column(db.String(100), nullable=True) # CHANGE TO GET ON CREATION
@@ -43,15 +43,15 @@ class Session(db.Model):
 class Score(db.Model):
     __tablename__ = "score"
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.Integer, db.ForeignKey('session.id'), nullable=False)
+    shooting_event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     format_id = db.Column(db.Integer, db.ForeignKey('format.id'), nullable=False)
 
 class Shot(db.Model):
     __tablename__ = "shots"
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     score_id = db.Column(db.Integer, db.ForeignKey('score.id'), nullable=False)
-    shot_score = db.Column(db.Integer, primary_key=True)
+    shot_score = db.Column(db.Integer, nullable=False)
 
 
 # Create the database tables before running the app
@@ -84,8 +84,14 @@ def login():
 
         user = User.query.filter_by(username=username, password=password).first()
 
+
+    
         if user:
+            print("User Found, Starting Shooting Event")
+            print(username)
+            print(user.admin)
             session['username'] = username
+            session['admin'] = user.admin
             return redirect(url_for('home'))
         else:
             return 'Invalid login credentials. <a href="/login">Try again</a>'
@@ -148,9 +154,11 @@ def logout():
     session.pop('username', None)
     return redirect(url_for('home'))
 
-@app.route('/add_session', methods=['GET', 'POST'])
-def add_session():
-    if 'username' in session and session['admin'] == True:
+@app.route('/add_event', methods=['GET', 'POST'])
+def add_event():
+    if 'username' in session and session['admin'] == False:
+        print("Admin is False or Username not in session ")
+        print(session)
         return redirect(url_for('login'))
 
     if request.method == 'POST':
@@ -158,7 +166,7 @@ def add_session():
         user = User.query.filter_by(username=username).first()
 
         if user:
-            # Getting data from add_session.html
+            # Getting data from add_event.html
             distance = int(request.form['distance'])
             shots_per_target = int(request.form['shots_per_target'])
             target_type = request.form['target_type']
@@ -169,30 +177,27 @@ def add_session():
             # TO DO: FORMAT CREATES NEW FORMAT ENTRY EVERY TIME, SIMPLIFY
 
             # Adding data to respective tables
-            new_session = Session(description=description)
+            new_event = Event(description=description)
             new_format = Format(target_type=target_type, shots_per_target=shots_per_target, distance=distance) 
 
-            db.session.add(new_session)
+            db.session.add(new_event)
             db.session.add(new_format)
             db.session.commit()
 
-            # Store session details in the Flask session for use in run_session
-            session['session_id'] = new_session.id
+            # Store event details in the Flask session for use in run_event
+            session['event_id'] = new_event.id
             session['distance'] = distance
             session['shots_per_target'] = shots_per_target
             session['target_type'] = target_type
 
-            print("/add_session: shooters", shooters)
+            print("/add_event: shooters", shooters)
+            print("/add_event: session['shooters']:", session.get('shooters'))
 
-            #session['users'] = users
-
-            print("/add_session: session['shooters']:", session.get('shooters'))
-
-            return redirect(url_for('run_session'))
+            return redirect(url_for('run_event'))
 
     groups = Group.query.all()
 
-    return render_template('add_session.html', groups=groups)
+    return render_template('add_event.html', groups=groups)
 
 @app.route('/search_users', methods=['POST'])
 def search_users():
@@ -214,45 +219,44 @@ def search_users():
     return jsonify({'users': user_list})
 
 
-@app.route('/add_user_to_session', methods=['POST'])
-def add_user_to_session():
-    ## Getting this from the search function in add_session 
+@app.route('/add_user_to_event', methods=['POST'])
+def add_user_to_event():
+    ## Getting this from the search function in add_event
     shooter_id = request.form.get('user_id')
-    session_shooters = session.get('shooters', [])
+    event_shooters = session.get('shooters', [])
 
-    print("/add_user_to_session: shooter_id:", shooter_id)
-    print("/add_user_to_session: session_shooters", session_shooters)
+    print("/add_user_to_event: shooter_id:", shooter_id)
+    print("/add_user_to_event: event_shooters", event_shooters)
     
     if shooter_id:
-        # Check if the user is already in the session
-        if shooter_id not in session_shooters:
-            session_shooters.append(shooter_id)
-            session['shooters'] = session_shooters
+        # Check if the user is already in the event
+        if shooter_id not in event_shooters:
+            event_shooters.append(shooter_id)
+            session['shooters'] = event_shooters
 
     # Retrieve the list of groups for rendering the template
     groups = Group.query.all()
 
     # Retrieve the list of users for rendering the template
     users = User.query.all()
+
+    print("/add_user_to_event: session['shooters']: ", session.get('shooters'))
     
-    #print("/add_user_to_session: groups: ", groups)
-    #print("/add_user_to_session: users: ", users)
-
-    print("/add_user_to_session: session['shooters']: ", session.get('shooters'))
-    
-    return render_template('add_session.html', groups=groups, users=users)
+    return render_template('add_event.html', groups=groups, users=users)
 
 
-@app.route('/run_session', methods=['GET', 'POST'])
-def run_session():
-    if 'username' in session and session['admin'] == True:
+@app.route('/run_event', methods=['GET', 'POST'])
+def run_event():
+    if 'username' in session and session['admin'] == False:
+        print("Admin is False or Username not in session ")
+        print(session)
         return redirect(url_for('login'))
 
     # Initialize shooters_username outside the if block
     shooters_username = []
 
     # Retrieve session details from the Flask session
-    session_id = session.get('session_id')
+    event_id = session.get('event_id')
     distance = session.get('distance')
     shots_per_target = session.get('shots_per_target')
     target_type = session.get('target_type')
@@ -266,20 +270,21 @@ def run_session():
         # Extract usernames from the user objects
         shooters_username = [user.username for user in users]
 
-    if not all([session_id, distance, shots_per_target, target_type, shooters, shooters_username]):
-        print("session_id:", session_id)
+    if not all([event_id, distance, shots_per_target, target_type, shooters, shooters_username]):
+        print("event_id:", event_id)
         print("distance:", distance)
         print("shot_per_target:", shots_per_target)
         print("target_type:", target_type)
         print("shooters:", shooters)
         print("shooters_username:", shooters_username)
-        return redirect(url_for('add_session'))
+        #print(session)
+        return redirect(url_for('add_event'))
 
     # For each user: display: 
     # Input for each shot, which appears (shots_per_target) number of times 
     
     # Clear the session details to avoid reusing them
-    #session.pop('session_id', None)
+    #session.pop('event_id', None)
     #session.pop('distance', None)
     #session.pop('shots_per_target', None)
     #session.pop('target_type', None)
@@ -288,42 +293,53 @@ def run_session():
 
     # Use the retrieved session details as needed
 
-    return render_template('run_session.html', 
-        session_id=session_id, distance=distance, shots_per_target=shots_per_target, 
-        target_type=target_type, shooters=shooters, shooters_username=shooters_username)
+    print("event_id:", event_id)
+    print("distance:", distance)
+    print("shot_per_target:", shots_per_target)
+    print("target_type:", target_type)
+    print("shooters:", shooters)
+    print("shooters_username:", shooters_username)
+
+    return render_template('run_event.html', 
+        event_id=event_id, 
+        distance=distance, 
+        shots_per_target=shots_per_target, 
+        target_type=target_type, 
+        shooters=shooters, 
+        shooters_username=shooters_username)
 
 
-@app.route('/process_shots/<int:session_id>', methods=['GET', 'POST'])
-def process_shots(session_id):
-    if 'username' in session and session['admin'] == True:
+@app.route('/process_shots/<int:event_id>', methods=['GET', 'POST'])
+def process_shots(event_id):
+    if 'username' in session and session['admin'] == False:
+        print("Admin is False or Username not in session ")
+        print(session)
         return redirect(url_for('login'))
 
-    shooting_session = Session.query.get(session_id)
-
-    if not shooting_session:
-        return redirect(url_for('add_session'))
-    
-    print("ADDING SHOTS TO DATABASE")
-
-    #user_ids = session.get('shooters')
+   
+    # Get the session details
     shots_per_target = session.get('shots_per_target')
 
-    if request.method == 'POST':
-        for user_id in session.get('shooters', []):
-            for i in range(shots_per_target):
-                shot_score_value = int(request.form.get(f'user_{user_id}_shot_{i+1}', 0))
-                shot = Shot(score_id=user_id, shot_score=shot_score_value)
-                db.session.add(shot)
+    # Initialize a dictionary to store shot data for each user
+    shot_data = {}
 
-        db.session.commit()
+    # Iterate over the form data to extract shot scores for each user
+    for username in session.get('shooters_username', []):
+        user_shot_data = []
+        for i in range(1, shots_per_target + 1):
+            shot_key = f'user_{username}_shot_{i}'
+            shot_score = int(request.form.get(shot_key, 0))
+            user_shot_data.append(shot_score)
+        shot_data[username] = user_shot_data
 
-        return redirect(url_for('run_session'))
+    # Now shot_data is a dictionary where keys are usernames and values are lists of shot scores
+    print("Shot data:", shot_data)
 
-    user_ids = session.get('user_ids', [])
+    # Here you can process the shot data and save it to the database
 
-    print(user_ids)
+    ## NEED TO FIND WHAT user_ids are 
 
-    return render_template('process_shots.html', session_id=session_id, user_ids=user_ids, shots_per_target=shooting_session.format.shots_per_target)
+    return render_template('process_shots.html', event_id=event_id, user_ids=user_ids, shots_per_target=shooting_session.format.shots_per_target)
 
 @app.route('/search')
 def search():

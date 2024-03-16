@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Shooting Session</title>
+    <title>Add Shooting Event</title>
 
     <!-- Include jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
@@ -29,7 +29,7 @@
                                                   .attr('data-user-id', user.id)
                                                   .addClass('search-result')
                                                   .click(function() {
-                                                      addUserToSession(user.id);
+                                                      addUserToEvnt(user.id);
                                                   });
                             searchResults.append(result);
                         });
@@ -40,9 +40,9 @@
             });
         }
 
-        function addUserToSession(userId) {
+        function addUserToEvent(userId) {
             $.ajax({
-                url: '/add_user_to_session',
+                url: '/add_user_to_event',
                 method: 'POST',
                 data: { user_id: userId },
                 success: function(response) {
@@ -56,7 +56,7 @@
     </script>
 </head>
 <body>
-    <h1>Add Shooting Session</h1>
+    <h1>Add Shooting Event</h1>
     <form method="POST">
         <!--div id="username-container">
             <label for="username">Username:</label>
@@ -80,7 +80,7 @@
         <label for="description">Description:</label>
         <input type="text" name="description" required>
         <br>
-        <button type="submit">Add Session</button>
+        <button type="submit">Add Event</button>
     </form>
 
     
