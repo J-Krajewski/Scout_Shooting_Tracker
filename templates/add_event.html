@@ -31,7 +31,7 @@
                                                   .attr('data-user-id', user.id)
                                                   .addClass('search-result')
                                                   .click(function() {
-                                                      addUserToEvnt(user.id);
+                                                      addUserToEvent(user.id);
                                                   });
                             searchResults.append(result);
                         });
@@ -61,10 +61,9 @@
     {% include 'navbar.html' %}
     <h1>Add Shooting Event</h1>
     <form method="POST">
-        <!--div id="username-container">
-            <label for="username">Username:</label>
-            <input type="text" name="usernames" required>
-        </div-->
+        <!-- Option to automatically get date and time -->
+        
+        
 
         <label for="search">Search for Users:</label>
         <input type="text" id="search" name="search" oninput="searchUsers()">
@@ -83,9 +82,40 @@
         <label for="description">Description:</label>
         <input type="text" name="description" required>
         <br>
+
+        <!-- Manual input fields for date and time -->
+        
+        <div id="manualDateTimeFields" style="display:block">
+            <label for="date">Date:</label>
+            <input type="date" name="date" id="date">
+            <br>
+            <label for="time">Time:</label>
+            <input type="time" name="time" id="time">
+            <br>
+        </div>
+        <br>
+
+        <input type="checkbox" name="autoDateTime" id="autoDateTime" onchange="toggleDateTimeFields()" value=True> Automatically get date and time<br><br>
+        <!--input type="checkbox" name="autoDateTime" id="autoDateTime" value=True> Automatically get date and time<br><br-->
+
+
+
         <button type="submit">Add Event</button>
     </form>
 
-    
+    <!-- Script to toggle visibility of manual date and time fields -->
+    <script>
+        function toggleDateTimeFields() {
+            var autoDateTimeCheckbox = document.getElementById("autoDateTime");
+            var manualDateTimeFields = document.getElementById("manualDateTimeFields");
+
+
+            if (autoDateTimeCheckbox.checked) {
+                manualDateTimeFields.style.display = "none";
+            } else {
+                manualDateTimeFields.style.display = "block";
+            }
+        }
+    </script>
 </body>
 </html>

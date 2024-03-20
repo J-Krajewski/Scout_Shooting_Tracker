@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 from flask import jsonify, request, render_template, redirect, url_for, session
 from collections import defaultdict
+from datetime import datetime
 
 
 
@@ -39,7 +40,8 @@ class Event(db.Model):
     __tablename__ = "event"
     id = db.Column(db.Integer, primary_key=True) 
     description = db.Column(db.String(100), nullable=True)
-    date = db.Column(db.String(100), nullable=True) # CHANGE TO GET ON CREATION
+    date = db.Column(db.String(100), nullable=True)
+    time = db.Column(db.String(100), nullable=True)
 
 class Score(db.Model):
     __tablename__ = "score"
@@ -69,8 +71,21 @@ with app.app_context():
         else:
             print(f"Group already exists: {district}, Number: {number}")
 
+    def add_new_user(username, password, admin, group_id):
+        existing_user = User.query.filter_by(username=username).first()
+        if not existing_user:
+            new_user = User(username=username, password=password, admin=admin, group_id=group_id)
+            db.session.add(new_user)
+            db.session.commit()
+            print(f"Added new user: {username}")
+        else:
+            print(f"User already exists: {username}")
+
     add_new_group("Whitley Bay", 9)
     add_new_group("Teddington", 3)
+    add_new_user("scout1", "password1", False, 1)  # Assuming group_id for Whitley Bay is 1
+    add_new_user("scout2", "password2", False, 1) 
+    add_new_user("leader", "leader", True, 1) 
 
 
 @app.route('/')
@@ -96,6 +111,8 @@ def login():
             return redirect(url_for('home'))
         else:
             return 'Invalid login credentials. <a href="/login">Try again</a>'
+        
+        
 
     return render_template('login.html')
 
@@ -157,7 +174,7 @@ def logout():
 
 @app.route('/add_event', methods=['GET', 'POST'])
 def add_event():
-    if 'username' in session and session['admin'] == False:
+    if 'username' not in session or session['admin'] == False:
         print("Admin is False or Username not in session ")
         print(session)
         return redirect(url_for('login'))
@@ -170,15 +187,29 @@ def add_event():
             # Getting data from add_event.html
             distance = int(request.form['distance'])
             shots_per_target = int(request.form['shots_per_target'])
+            
+
+            if 'autoDateTime' in request.form:
+                auto_date_time = request.form['autoDateTime']
+            else:
+                auto_date_time = False
+
+            if auto_date_time:
+                print("Using Automatic Date Time")
+                current_datetime = datetime.now()
+                date = current_datetime.date().strftime('%Y-%m-%d')
+                time = current_datetime.time().strftime('%H:%M')
+            else:
+                print("Using Manual Date Time")
+                date = request.form['date']
+                time = request.form['time']
+           
             target_type = request.form['target_type']
             description = request.form['description']
-            #users = request.form.getlist('users')
             shooters = session.get('shooters')
-            # TO DO: GET DATE TIME ADD TO SESSION 
-            # TO DO: FORMAT CREATES NEW FORMAT ENTRY EVERY TIME, SIMPLIFY
 
             # Adding data to respective tables
-            new_event = Event(description=description)
+            new_event = Event(description=description, date=date, time=time)
             new_format = Format(target_type=target_type, shots_per_target=shots_per_target, distance=distance) 
 
             db.session.add(new_event)
@@ -187,12 +218,17 @@ def add_event():
 
             # Store event details in the Flask session for use in run_event
             session['event_id'] = new_event.id
+            session['event_date'] = date
+            session['event_time'] = time
             session['distance'] = distance
             session['shots_per_target'] = shots_per_target
             session['target_type'] = target_type
+            
 
             print("/add_event: shooters", shooters)
             print("/add_event: session['shooters']:", session.get('shooters'))
+            print("DATE:", date)
+            print("TIME:", time)
 
             return redirect(url_for('run_event'))
 
@@ -233,7 +269,14 @@ def get_user_scores(user_id):
         return jsonify({'error': 'User not found'})
 
     scores = Score.query.filter_by(user_id=user_id).all()
+    
     session_dict = defaultdict(list)
+
+    if user:
+        shooter_name = user.username
+        print("Username:", shooter_name)
+    else:
+        print("User not found.")
 
     for score in scores:
         shots = Shot.query.filter_by(score_id=score.id).all()
@@ -241,9 +284,9 @@ def get_user_scores(user_id):
         session_dict[(score.event_id, score.format_id)].append(shot_scores)
 
     # Convert defaultdict to list of dictionaries
-    session_list = [{'event_id': session[0], 'format_id': session[1], 'shot_scores': scores} for session, scores in session_dict.items()]
+    session_list = [{'shooter_name': shooter_name, 'event_id': session[0], 'format_id': session[1], 'shot_scores': scores} for session, scores in session_dict.items()]
 
-    print("SESSION LIST",session_list)
+    print("Shooting Session List",session_list)
 
 
     return jsonify({'sessions': session_list})
@@ -291,6 +334,8 @@ def run_event():
     shots_per_target = session.get('shots_per_target')
     target_type = session.get('target_type')
     shooters = session.get('shooters')
+    event_date = session.get('event_date')
+    event_time = session.get('event_time')
 
     # Check if shooters is not None before using it in the query
     if shooters is not None:
@@ -304,11 +349,14 @@ def run_event():
 
     if not all([event_id, distance, shots_per_target, target_type, shooters, shooters_username]):
         print("event_id:", event_id)
+        print("event_date:", event_date)
+        print("event_time:", event_time)
         print("distance:", distance)
         print("shot_per_target:", shots_per_target)
         print("target_type:", target_type)
         print("shooters:", shooters)
         print("shooters_username:", shooters_username)
+        
         #print(session)
         return redirect(url_for('add_event'))
 
@@ -331,7 +379,8 @@ def run_event():
         shots_per_target=shots_per_target, 
         target_type=target_type, 
         shooters=shooters, 
-        shooters_username=shooters_username)
+        shooters_username=shooters_username, date=event_date, time=event_time
+        )
 
 @app.route('/process_shooter/<int:event_id>', methods=['GET', 'POST'])
 def process_shooter(event_id):

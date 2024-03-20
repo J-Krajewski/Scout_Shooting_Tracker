@@ -23,7 +23,7 @@
     <hr>
 
     <div id="selectedUserScores">
-        <h2>Scores for Selected User:</h2>
+        <h2 id="selectedUserTitle">User Shooting Data </h2>
         <ul id="scoresList">
             <!-- Scores will be dynamically loaded here -->
         </ul>
@@ -51,18 +51,27 @@
                     }
                 });
             });
-
+    
             $('#searchResults').on('change', '.userCheckbox', function(){
                 var userId = $(this).val();
+                var userName = $(this).next('span').text();
+                $('.userCheckbox').not(this).prop('checked', false); // Uncheck other checkboxes
                 if ($(this).is(':checked')) {
                     $.ajax({
                         url: '/get_user_scores/' + userId,
                         method: 'GET',
                         success: function(response){
-                            var scores = response.scores;
+                            var sessions = response.sessions;
                             var html = '';
-                            scores.forEach(function(score){
-                                html += '<li>Shot Score: ' + score.shot_score + '</li>';
+                            //$('#selectedUserTitle').text('Score for User: ' + userName);
+                            sessions.forEach(function(session){
+                                $('#selectedUserTitle').text('Shooting Stats for ' + session.shooter_name);
+                                html += '<h3>Event ID: ' + session.event_id + ', Format ID: ' + session.format_id + '</h3>';
+                                html += '<ul>';
+                                session.shot_scores.forEach(function(shot_scores){
+                                    html += '<li>Shot Scores: ' + shot_scores.join(', ') + '</li>';
+                                });
+                                html += '</ul>';
                             });
                             $('#scoresList').html(html);
                         },

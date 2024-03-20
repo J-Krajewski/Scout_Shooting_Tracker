@@ -16,6 +16,8 @@
     <p>Target Type: {{ target_type }}</p>
     <p>Shooter ID List: {{ shooters }}</p>
     <p>Shooter Username List: {{ shooters_username }}</p>
+    <p>Event Start Date: {{ date }}</p>
+    <p>Event Start Time: {{ time }}</p>
 
     <form method="POST" action="{{ url_for('process_shooter', event_id=event_id) }}">
         {% for username in shooters_username %}
