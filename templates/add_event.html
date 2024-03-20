@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar_style.css') }}">
     <title>Add Shooting Event</title>
 
     <!-- Include jQuery -->
@@ -56,6 +58,7 @@
     </script>
 </head>
 <body>
+    {% include 'navbar.html' %}
     <h1>Add Shooting Event</h1>
     <form method="POST">
         <!--div id="username-container">

@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar_style.css') }}">
     <title>User List</title>
 </head>
 <body>
+    {% include 'navbar.html' %}
     <h1>User List</h1>
     <ul>
         {% for user in users %}
