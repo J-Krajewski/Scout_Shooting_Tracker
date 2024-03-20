@@ -270,7 +270,7 @@ def get_user_scores(user_id):
 
     scores = Score.query.filter_by(user_id=user_id).all()
     
-    session_dict = defaultdict(list)
+    event_dict = defaultdict(list)
 
     if user:
         shooter_name = user.username
@@ -281,15 +281,26 @@ def get_user_scores(user_id):
     for score in scores:
         shots = Shot.query.filter_by(score_id=score.id).all()
         shot_scores = [shot.shot_score for shot in shots]
-        session_dict[(score.event_id, score.format_id)].append(shot_scores)
+
+        # find event information from event_id 
+        searched_event = Event.query.filter_by(id=score.event_id).first()
+        event_date = searched_event.date
+        event_time = searched_event.time
+
+        event_dict[(score.event_id, score.format_id, event_date, event_time)].append(shot_scores)
+
+
+    
 
     # Convert defaultdict to list of dictionaries
-    session_list = [{'shooter_name': shooter_name, 'event_id': session[0], 'format_id': session[1], 'shot_scores': scores} for session, scores in session_dict.items()]
+    event_list = [{'shooter_name': shooter_name, 'event_id': event[0], 'format_id': event[1], 
+                     'event_date': event[2], "event_time": event[3],
+                     'shot_scores': scores} for event, scores in event_dict.items()]
 
-    print("Shooting Session List",session_list)
+    print("Shooting Event List",event_list)
 
 
-    return jsonify({'sessions': session_list})
+    return jsonify({'events': event_list})
 
 
 @app.route('/add_user_to_event', methods=['POST'])

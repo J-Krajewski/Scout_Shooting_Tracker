@@ -61,12 +61,13 @@
                         url: '/get_user_scores/' + userId,
                         method: 'GET',
                         success: function(response){
-                            var sessions = response.sessions;
+                            var events = response.events;
                             var html = '';
                             //$('#selectedUserTitle').text('Score for User: ' + userName);
-                            sessions.forEach(function(session){
-                                $('#selectedUserTitle').text('Shooting Stats for ' + session.shooter_name);
-                                html += '<h3>Event ID: ' + session.event_id + ', Format ID: ' + session.format_id + '</h3>';
+                            events.forEach(function(event){
+                                $('#selectedUserTitle').text('Shooting Stats for ' + event.shooter_name);
+                                html += '<h3>Event ID: ' + event.event_id + ', Format ID: ' + event.format_id + 
+                                    'Event Date: '+ event.event_date + '</h3>';
                                 html += '<ul>';
                                 session.shot_scores.forEach(function(shot_scores){
                                     html += '<li>Shot Scores: ' + shot_scores.join(', ') + '</li>';
