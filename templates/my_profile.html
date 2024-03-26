@@ -13,5 +13,26 @@
     <p>Username: {{ username }}</p>
     <p>Group Name: {{ group_name }}</p>
     <!-- Add more profile information here if needed -->
+
+    
+    <div id="events-container">
+        {% for event in event_list %}
+        <div class="event-box">
+            <h3>Event Date & Time: {{ event.event_date }} {{ event.event_time }}</h3>
+            
+            <p> Target Type: {{ event.target_type }}</p>
+            <p> Distance: {{ event.distance }}</p>
+            <p> shots_per_target: {{ event.shots_per_target }}</p>
+
+            {% for shot_score in event.shot_scores %}
+            <div class="shots-box">
+                <p>Shots: {{ shot_score }}</p>
+            </div>
+            {% endfor %}
+
+        </div>
+        {% endfor %}
+    </div>
+    
 </body>
 </html>

@@ -263,12 +263,7 @@ def review_scores():
 
 from collections import defaultdict
 
-@app.route('/get_user_scores/<int:user_id>')
-def get_user_scores(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({'error': 'User not found'})
-
+def retrieve_shooting_data(user_id, user):
     scores = Score.query.filter_by(user_id=user_id).all()
     
     event_dict = defaultdict(list)
@@ -303,6 +298,15 @@ def get_user_scores(user_id):
 
     print("Shooting Event List",event_list)
 
+    return event_list
+
+@app.route('/get_user_scores/<int:user_id>')
+def get_user_scores(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'})
+
+    event_list = retrieve_shooting_data(user_id=user_id, user=user)
 
     return jsonify({'events': event_list})
 
@@ -480,6 +484,7 @@ def my_profile():
     
     username = session.get("username")
     user_id = session.get("user_id")
+
     user_data = User.query.filter_by(id = user_id).first()
     user_group_id = user_data.group_id
     user_group_data = Group.query.filter_by(id = user_group_id).first()
@@ -487,8 +492,14 @@ def my_profile():
     suffix = { 1: "st", 2: "nd", 3: "rd" }.get(n if (n < 20) else (n % 10), 'th')
     group_name = str(str(user_group_data.number) + suffix + " " + user_group_data.district)
     print(group_name)
+
+    event_list = retrieve_shooting_data(user_id=user_id, user=user_data)
     
-    return render_template('my_profile.html', group_name = group_name, username = username)
+    return render_template('my_profile.html', 
+                           group_name = group_name, 
+                           username = username, 
+                           event_list=event_list
+                           )
  
 
 if __name__ == '__main__':
