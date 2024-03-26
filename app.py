@@ -5,8 +5,6 @@ from flask import jsonify, request, render_template, redirect, url_for, session
 from collections import defaultdict
 from datetime import datetime
 
-
-
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this to a secure secret key
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # Use SQLite database
@@ -49,13 +47,13 @@ class Score(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     format_id = db.Column(db.Integer, db.ForeignKey('format.id'), nullable=False)
+    average = db.Column(db.Float, nullable=True)
 
 class Shot(db.Model):
     __tablename__ = "shots"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     score_id = db.Column(db.Integer, db.ForeignKey('score.id'), nullable=False)
     shot_score = db.Column(db.Integer, nullable=False)
-
 
 # Create the database tables before running the app
 with app.app_context():
@@ -100,8 +98,6 @@ def login():
 
         user = User.query.filter_by(username=username, password=password).first()
 
-
-    
         if user:
             print("User Found, Starting Shooting Event")
             print(username)
@@ -236,6 +232,8 @@ def add_event():
     groups = Group.query.all()
 
     return render_template('add_event.html', groups=groups)
+
+    
 
 @app.route('/search_users', methods=['POST'])
 def search_users():
@@ -454,15 +452,35 @@ def process_shooter(event_id):
                         shot = Shot(score_id=score.id, shot_score=shot_score)
                         db.session.add(shot)
                         db.session.commit()
-                else:
-                    print("Shooting event or format not found")
+
+                ## Calculate Shot Statistics 
+
+
             else:
-                print("User not found")
+                print("Shooting event or format not found")
+        else:
+            print("User not found")
 
         # Now shot_data is a dictionary where keys are usernames and values are lists of shot scores
         print("Shot data:", shot_data)
 
         # Here you can process the shot data and save it to the database
+
+        ## Get event
+
+        event = Event.query.get(id=event_id).first()
+        #event_shooters 
+        scores = Score.query.get(event_id=event_id).all()
+
+        print(scores)
+            
+            # for each user in event
+                # get all shot scores
+                # add all shot scores
+                # find total number of shots taken != shots per target 
+                # calculate average
+                # update database 
+        
 
     return render_template('process_shooter.html', event_id=event_id, shot_data=shot_data, shots_per_target=shots_per_target)
 
