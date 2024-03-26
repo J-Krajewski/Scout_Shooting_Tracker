@@ -108,6 +108,7 @@ def login():
             print(user.admin)
             session['username'] = username
             session['admin'] = user.admin
+            session["user_id"] = user.id
             return redirect(url_for('home'))
         else:
             return 'Invalid login credentials. <a href="/login">Try again</a>'
@@ -473,7 +474,21 @@ def search():
 
 @app.route('/my_profile')
 def my_profile():
-    return render_template('my_profile.html')
+
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    username = session.get("username")
+    user_id = session.get("user_id")
+    user_data = User.query.filter_by(id = user_id).first()
+    user_group_id = user_data.group_id
+    user_group_data = Group.query.filter_by(id = user_group_id).first()
+    n = user_group_data.number
+    suffix = { 1: "st", 2: "nd", 3: "rd" }.get(n if (n < 20) else (n % 10), 'th')
+    group_name = str(str(user_group_data.number) + suffix + " " + user_group_data.district)
+    print(group_name)
+    
+    return render_template('my_profile.html', group_name = group_name, username = username)
  
 
 if __name__ == '__main__':
