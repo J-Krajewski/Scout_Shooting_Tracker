@@ -66,10 +66,11 @@
                             //$('#selectedUserTitle').text('Score for User: ' + userName);
                             events.forEach(function(event){
                                 $('#selectedUserTitle').text('Shooting Stats for ' + event.shooter_name);
-                                html += '<h3>Event ID: ' + event.event_id + ', Format ID: ' + event.format_id + 
-                                    'Event Date: '+ event.event_date + '</h3>';
+                                html += '<h3>' + 
+                                    ' Event Date: '+ event.event_date + ' Distance: '+ event.distance + ' Shots Per Target: '+ event.spt + 
+                                    ' Target Type: '+ event.target_type + ' </h3>';
                                 html += '<ul>';
-                                session.shot_scores.forEach(function(shot_scores){
+                                event.shot_scores.forEach(function(shot_scores){
                                     html += '<li>Shot Scores: ' + shot_scores.join(', ') + '</li>';
                                 });
                                 html += '</ul>';

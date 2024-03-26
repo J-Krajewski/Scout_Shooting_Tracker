@@ -286,15 +286,18 @@ def get_user_scores(user_id):
         searched_event = Event.query.filter_by(id=score.event_id).first()
         event_date = searched_event.date
         event_time = searched_event.time
+        
+        format = Format.query.filter_by(id=score.format_id).first()
+        print(format)
+        
 
-        event_dict[(score.event_id, score.format_id, event_date, event_time)].append(shot_scores)
-
-
-    
+        event_dict[(score.event_id, score.format_id, event_date, event_time, 
+                    format.shots_per_target, format.target_type, format.distance)].append(shot_scores)
 
     # Convert defaultdict to list of dictionaries
     event_list = [{'shooter_name': shooter_name, 'event_id': event[0], 'format_id': event[1], 
                      'event_date': event[2], "event_time": event[3],
+                     'spt': event[4], 'target_type': event[5], 'distance': event[6],
                      'shot_scores': scores} for event, scores in event_dict.items()]
 
     print("Shooting Event List",event_list)
