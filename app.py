@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from flask import jsonify, request, render_template, redirect, url_for, session
 from collections import defaultdict
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 import statistics
 
 app = Flask(__name__)
@@ -73,7 +74,8 @@ with app.app_context():
     def add_new_user(username, password, admin, group_id):
         existing_user = User.query.filter_by(username=username).first()
         if not existing_user:
-            new_user = User(username=username, password=password, admin=admin, group_id=group_id)
+            hashed_password = generate_password_hash(password)
+            new_user = User(username=username, password=hashed_password, admin=admin, group_id=group_id)
             db.session.add(new_user)
             db.session.commit()
             print(f"Added new user: {username}")
@@ -97,9 +99,9 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        user = User.query.filter_by(username=username, password=password).first()
+        user = User.query.filter_by(username=username).first()
 
-        if user:
+        if user and check_password_hash(user.password, password):
             print("User Found, Starting Shooting Event")
             print(username)
             print(user.admin)
@@ -131,20 +133,19 @@ def signup():
             if not district:
                 return 'Group does not exist. <a href="/signup">Try a different group</a>'
             
-            print(district.id)
-            print(int(district.id))
+            hashed_password = generate_password_hash(password)
+
+            #print(district.id)
+            #print(int(district.id))
 
             # Create a new user and assign the district and group
-            new_user = User(username=username, password=password, admin=admin_checkbox_checked, group_id=int(district.id))
+            new_user = User(username=username, password=hashed_password, admin=admin_checkbox_checked, group_id=int(district.id))
 
             db.session.add(new_user)
             db.session.commit()
 
-            print("ADDED")
-
             session['username'] = username
             session['admin'] = admin_checkbox_checked
-
 
             return redirect(url_for('home'))
         except IntegrityError:
