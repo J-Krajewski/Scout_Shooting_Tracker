@@ -14,6 +14,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # Use SQLite databa
 
 db = SQLAlchemy(app)
 
+## Database Classes
+# Inheriting from db.Model
+
 class Group(db.Model):
     __tablename__ = "group"
     id = db.Column(db.Integer, primary_key=True)
@@ -27,6 +30,7 @@ class User(db.Model):
     password = db.Column(db.String(120), nullable=False)
     admin = db.Column(db.Boolean, nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
+    type = db.Column(db.String(120), nullable=False) # Scout, Leader or District Comissioner
     #scores = db.relationship('Event', backref='user', lazy=True)
 
 class Format(db.Model):
@@ -57,6 +61,116 @@ class Shot(db.Model):
     score_id = db.Column(db.Integer, db.ForeignKey('score.id'), nullable=False)
     shot_score = db.Column(db.Integer, nullable=False)
 
+## Session Classes
+    
+class SessionUser():
+
+    def __init__(self, id, username, group_id, type): # Constructor or initialiser 
+        self.__id = id
+        self.__username = username
+        self.__group_id = group_id
+        self.__type = type
+
+
+    # Any user should be able to add a new scout user 
+    def add_new_scout(username, password, group_id, type):
+        existing_user = User.query.filter_by(username=username).first()
+        if not existing_user:
+            hashed_password = generate_password_hash(password)
+            new_user = User(username=username, password=hashed_password, admin=False, group_id=group_id, type=type)
+            db.session.add(new_user)
+            db.session.commit()
+            print(f"Added new user: {username}")
+        else:
+            print(f"User already exists: {username}")
+
+    # getter methods and setter methods to retrieve private information from object
+    def get_username(self):
+        return self.__username
+    
+    def get_id(self):
+        return self.__id
+    
+    
+    
+
+
+class SessionScout(SessionUser):
+
+    def __init__(self, id, username, group_id, type):
+        super().__init__(id, username, group_id, type)
+        self.__admin = False
+        self.__priviledges = []
+
+    def get_username(self):
+        return super().get_username()
+    
+    def get_id(self):
+        return super().get_id()
+
+
+
+class SessionLeader(SessionUser):
+
+    def __init__(self, id, username, group_id, type):
+        super().__init__(id, username, group_id, type)
+        self.__admin = True
+        self.__priviledges = ["start_shooting"]
+
+    def get_username(self):
+        return super().get_username()
+    
+    def get_id(self):
+        return super().get_id()
+
+    
+class SessionDistrictComissioner(SessionUser):
+
+    def __init__(self, id, username, group_id, type):
+        super().__init__(id, username, group_id, type)
+        self.__admin = True
+        self.__priviledges = ["add_district", "add_leader", "delete_leader", "delete_district"]
+
+    def add_leader(username, password, group_id):
+        existing_user = User.query.filter_by(username=username).first()
+        if not existing_user:
+            hashed_password = generate_password_hash(password)
+            new_user = User(username=username, password=hashed_password, admin=True, group_id=group_id)
+            db.session.add(new_user)
+            db.session.commit()
+            print(f"Added new user: {username}")
+        else:
+            print(f"User already exists: {username}")
+
+    def add_district(district, number):
+        existing_group = Group.query.filter_by(district=district, number=number).first()
+        if not existing_group:
+            new_group = Group(district=district, number=number)
+            db.session.add(new_group)
+            db.session.commit()
+            print(f"Added new group: {district}, Number: {number}")
+        else:
+            print(f"Group already exists: {district}, Number: {number}")
+
+    def get_username(self):
+        return super().get_username()
+    
+    def get_id(self):
+        return super().get_id()
+
+
+    
+    
+# current user in session CAN BE: leader,  scout, dc
+            # try: user_obj.add_leader()
+                # you dont have that method, fail
+            # otherwise let them do it 
+    
+
+
+## Maybe later class SessionExplorer():
+
+
 # Create the database tables before running the app
 with app.app_context():
     db.create_all()
@@ -71,43 +185,101 @@ with app.app_context():
         else:
             print(f"Group already exists: {district}, Number: {number}")
 
-    def add_new_user(username, password, admin, group_id):
+    def add_new_user(username, password, admin, group_id, type):
         existing_user = User.query.filter_by(username=username).first()
         if not existing_user:
             hashed_password = generate_password_hash(password)
-            new_user = User(username=username, password=hashed_password, admin=admin, group_id=group_id)
+            new_user = User(username=username, password=hashed_password, admin=admin, group_id=group_id, type=type)
             db.session.add(new_user)
             db.session.commit()
             print(f"Added new user: {username}")
         else:
             print(f"User already exists: {username}")
 
+    ## For testing purposes
     add_new_group("Whitley Bay", 9)
     add_new_group("Teddington", 3)
-    add_new_user("scout1", "password1", False, 1)  # Assuming group_id for Whitley Bay is 1
-    add_new_user("scout2", "password2", False, 1) 
-    add_new_user("leader", "leader", True, 1) 
+    add_new_user("scout1", "password1", False, 1, "scout")  # Assuming group_id for Whitley Bay is 1
+    add_new_user("scout2", "password2", False, 1, "scout") 
+    add_new_user("leader", "leader", True, 1, "leader") 
+    add_new_user("dc", "dc", True, 1, "district comissioner") 
 
+def get_session_user_object():
+    # Retrieve Information About our Object
+    user_object_dict = session.get('user_object_dict')
+    print(user_object_dict)
+
+    id = user_object_dict['_SessionUser__id']
+    username = user_object_dict['_SessionUser__username']
+    group_id = user_object_dict['_SessionUser__group_id']
+    type = user_object_dict['_SessionUser__type']
+
+    if type == "leader":
+        user_object = SessionLeader(id, username, group_id, type)
+    elif type == "scout":
+        user_object = SessionScout(id, username, group_id, type)
+    elif type == "district comissioner":
+        user_object = SessionDistrictComissioner(id, username, group_id, type)
+    else:
+        return "NO USER OBJECT CREATED"
+        
+    return user_object
+
+    
 
 @app.route('/')
 def home():
-     return render_template('home.html')
+    
+    user_object = get_session_user_object()
+
+
+    #if user_object_dict['_SessionUser__type'] == "scout":
+    #    user_object = SessionScout(**user_object_dict)
+    #if user_object_dict['_SessionUser__type'] == "district comissioner":
+    #    user_object = SessionDistrictComissioner(**user_object_dict)
+    
+
+    if user_object:
+        print(user_object.get_username())
+
+    return render_template('home.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        # Get the username from HTML form
         username = request.form['username']
         password = request.form['password']
-
+        # Get corresponding user object from database
         user = User.query.filter_by(username=username).first()
 
         if user and check_password_hash(user.password, password):
-            print("User Found, Starting Shooting Event")
             print(username)
             print(user.admin)
-            session['username'] = username
-            session['admin'] = user.admin
-            session["user_id"] = user.id
+            # Retrieve User Data From Database for object creation
+            id = user.id
+            username = user.username
+            type = user.type
+            group_id = user.group_id
+
+            # Create a user subclass for the session
+            if type == "scout":
+                session_user = SessionScout(id, username, group_id, type)
+            elif type == "leader":
+                session_user = SessionLeader(id, username, group_id, type)
+            elif type == "district comissioner":
+                session_user = SessionDistrictComissioner(id, username, group_id, type)
+
+            #session['username'] = username
+            #session['admin'] = user.admin
+            #session["user_id"] = user.id
+
+            #session['user_object'] = jsonify(session_user)
+            session['user_object_dict'] = session_user.__dict__
+
+
+            print(session_user.__dict__)
+           
             return redirect(url_for('home'))
         else:
             return 'Invalid login credentials. <a href="/login">Try again</a>'
@@ -156,6 +328,8 @@ def signup():
     # Provide a list of existing groups for the user to choose from during signup
     groups = Group.query.all()
     return render_template('signup.html', groups=groups)
+
+
 
 @app.route('/users')
 def user_list():
@@ -500,11 +674,15 @@ def search():
 @app.route('/my_profile')
 def my_profile():
 
-    if 'username' not in session:
+    if 'user_object_dict' not in session:
         return redirect(url_for('login'))
     
-    username = session.get("username")
-    user_id = session.get("user_id")
+    user_object = get_session_user_object()
+    username = user_object.get_username()
+    user_id = user_object.get_id()
+    
+    #username = session.get("username")
+    #user_id = session.get("user_id")
 
     user_data = User.query.filter_by(id = user_id).first()
     user_group_id = user_data.group_id
