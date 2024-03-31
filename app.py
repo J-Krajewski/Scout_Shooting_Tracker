@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from flask import jsonify, request, render_template, redirect, url_for, session
 from collections import defaultdict
 from datetime import datetime
+import statistics
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this to a secure secret key
@@ -275,7 +276,6 @@ def retrieve_shooting_data(user_id, user):
     for score in scores:
         shots = Shot.query.filter_by(score_id=score.id).all()
         shot_scores = [shot.shot_score for shot in shots]
-
         # find event information from event_id 
         searched_event = Event.query.filter_by(id=score.event_id).first()
         event_date = searched_event.date
@@ -444,7 +444,9 @@ def process_shooter(event_id):
                 event_format = Format.query.filter_by(shots_per_target=shots_per_target, target_type=target_type, distance=distance).first()
                 
                 if event and event_format:
-                    score = Score(event_id=event.id, user_id=user.id, format_id=event_format.id)
+                    average_score = statistics.mean(user_shot_data)
+                    print(average_score)
+                    score = Score(event_id=event.id, user_id=user.id, format_id=event_format.id, average=average_score)
                     db.session.add(score)
                     db.session.commit()
 
@@ -468,11 +470,11 @@ def process_shooter(event_id):
 
         ## Get event
 
-        event = Event.query.get(id=event_id).first()
+        #event = Event.query.get(id=event_id).first()
         #event_shooters 
-        scores = Score.query.get(event_id=event_id).all()
+        #scores = Score.query.get(event_id=event_id).all()
 
-        print(scores)
+        #print(scores)
             
             # for each user in event
                 # get all shot scores
