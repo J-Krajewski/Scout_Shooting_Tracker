@@ -10,12 +10,16 @@ import statistics
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this to a secure secret key
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # Use SQLite database
+db = SQLAlchemy(app)
+
+from SessionClasses import SessionLeader, SessionDistrictComissioner, SessionScout
+
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # Change this to a secure secret key
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # Use SQLite database
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/site.db'
 
 db = SQLAlchemy(app)
-
-## Database Classes
-# Inheriting from db.Model
 
 class Group(db.Model):
     __tablename__ = "group"
@@ -61,116 +65,6 @@ class Shot(db.Model):
     score_id = db.Column(db.Integer, db.ForeignKey('score.id'), nullable=False)
     shot_score = db.Column(db.Integer, nullable=False)
 
-## Session Classes
-    
-class SessionUser():
-
-    def __init__(self, id, username, group_id, type): # Constructor or initialiser 
-        self.__id = id
-        self.__username = username
-        self.__group_id = group_id
-        self.__type = type
-
-
-    # Any user should be able to add a new scout user 
-    def add_new_scout(username, password, group_id, type):
-        existing_user = User.query.filter_by(username=username).first()
-        if not existing_user:
-            hashed_password = generate_password_hash(password)
-            new_user = User(username=username, password=hashed_password, admin=False, group_id=group_id, type=type)
-            db.session.add(new_user)
-            db.session.commit()
-            print(f"Added new user: {username}")
-        else:
-            print(f"User already exists: {username}")
-
-    # getter methods and setter methods to retrieve private information from object
-    def get_username(self):
-        return self.__username
-    
-    def get_id(self):
-        return self.__id
-    
-    
-    
-
-
-class SessionScout(SessionUser):
-
-    def __init__(self, id, username, group_id, type):
-        super().__init__(id, username, group_id, type)
-        self.__admin = False
-        self.__priviledges = []
-
-    def get_username(self):
-        return super().get_username()
-    
-    def get_id(self):
-        return super().get_id()
-
-
-
-class SessionLeader(SessionUser):
-
-    def __init__(self, id, username, group_id, type):
-        super().__init__(id, username, group_id, type)
-        self.__admin = True
-        self.__priviledges = ["start_shooting"]
-
-    def get_username(self):
-        return super().get_username()
-    
-    def get_id(self):
-        return super().get_id()
-
-    
-class SessionDistrictComissioner(SessionUser):
-
-    def __init__(self, id, username, group_id, type):
-        super().__init__(id, username, group_id, type)
-        self.__admin = True
-        self.__priviledges = ["add_district", "add_leader", "delete_leader", "delete_district"]
-
-    def add_leader(username, password, group_id):
-        existing_user = User.query.filter_by(username=username).first()
-        if not existing_user:
-            hashed_password = generate_password_hash(password)
-            new_user = User(username=username, password=hashed_password, admin=True, group_id=group_id)
-            db.session.add(new_user)
-            db.session.commit()
-            print(f"Added new user: {username}")
-        else:
-            print(f"User already exists: {username}")
-
-    def add_district(district, number):
-        existing_group = Group.query.filter_by(district=district, number=number).first()
-        if not existing_group:
-            new_group = Group(district=district, number=number)
-            db.session.add(new_group)
-            db.session.commit()
-            print(f"Added new group: {district}, Number: {number}")
-        else:
-            print(f"Group already exists: {district}, Number: {number}")
-
-    def get_username(self):
-        return super().get_username()
-    
-    def get_id(self):
-        return super().get_id()
-
-
-    
-    
-# current user in session CAN BE: leader,  scout, dc
-            # try: user_obj.add_leader()
-                # you dont have that method, fail
-            # otherwise let them do it 
-    
-
-
-## Maybe later class SessionExplorer():
-
-
 # Create the database tables before running the app
 with app.app_context():
     db.create_all()
@@ -205,6 +99,14 @@ with app.app_context():
     add_new_user("dc", "dc", True, 1, "district comissioner") 
 
 def get_session_user_object():
+
+    # Check if user object already exists and is in session 
+
+    if 'user_object_dict' not in session:
+        print("There is no user_object_dict in session - redirecting to login page")
+        print(session)
+        return False
+
     # Retrieve Information About our Object
     user_object_dict = session.get('user_object_dict')
     print(user_object_dict)
@@ -225,24 +127,29 @@ def get_session_user_object():
         
     return user_object
 
-    
+def create_session_subclass(id, username, group_id, type):
+    # Create a user subclass for the session
+    if type == "scout":
+        session_user = SessionScout(id, username, group_id, type)
+    elif type == "leader":
+        session_user = SessionLeader(id, username, group_id, type)
+    elif type == "district comissioner":
+        session_user = SessionDistrictComissioner(id, username, group_id, type)
+
+    return session_user
 
 @app.route('/')
 def home():
-    
+    # Retrieve the user object
     user_object = get_session_user_object()
 
-
-    #if user_object_dict['_SessionUser__type'] == "scout":
-    #    user_object = SessionScout(**user_object_dict)
-    #if user_object_dict['_SessionUser__type'] == "district comissioner":
-    #    user_object = SessionDistrictComissioner(**user_object_dict)
-    
-
     if user_object:
-        print(user_object.get_username())
+        username = user_object.get_username()
+        print(username)
+    else: 
+        return redirect(url_for('login'))
 
-    return render_template('home.html')
+    return render_template('home.html', username=username)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -256,6 +163,7 @@ def login():
         if user and check_password_hash(user.password, password):
             print(username)
             print(user.admin)
+
             # Retrieve User Data From Database for object creation
             id = user.id
             username = user.username
@@ -263,40 +171,28 @@ def login():
             group_id = user.group_id
 
             # Create a user subclass for the session
-            if type == "scout":
-                session_user = SessionScout(id, username, group_id, type)
-            elif type == "leader":
-                session_user = SessionLeader(id, username, group_id, type)
-            elif type == "district comissioner":
-                session_user = SessionDistrictComissioner(id, username, group_id, type)
-
-            #session['username'] = username
-            #session['admin'] = user.admin
-            #session["user_id"] = user.id
-
-            #session['user_object'] = jsonify(session_user)
+            session_user = create_session_subclass(id=id, username=username, type=type, group_id=group_id)
             session['user_object_dict'] = session_user.__dict__
-
-
             print(session_user.__dict__)
            
             return redirect(url_for('home'))
         else:
             return 'Invalid login credentials. <a href="/login">Try again</a>'
         
-        
-
     return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
+        # Get information from HTML form 
         username = request.form['username']
         password = request.form['password']
         admin_checkbox_checked = 'admin' in request.form
         district_name = request.form['district']
         group_number = request.form['group_number']
+        type = "scout"
 
+        print(username)
 
         try:
             # Check if the district exists, and get the associated District object
@@ -311,24 +207,27 @@ def signup():
             #print(int(district.id))
 
             # Create a new user and assign the district and group
-            new_user = User(username=username, password=hashed_password, admin=admin_checkbox_checked, group_id=int(district.id))
+            group_id = int(int(district.id))
+            new_user = User(username=username, password=hashed_password, admin=admin_checkbox_checked, 
+                            group_id=group_id, type=type)
 
             db.session.add(new_user)
             db.session.commit()
 
-            session['username'] = username
-            session['admin'] = admin_checkbox_checked
+            # Create a user session object and add to the session 
+            session_user = create_session_subclass(id=new_user.id, username=new_user.username, 
+                                                   type=new_user.type, group_id=new_user.group_id)
+            session['user_object_dict'] = session_user.__dict__
 
             return redirect(url_for('home'))
+        
         except IntegrityError:
             db.session.rollback()
             return 'Username already exists. <a href="/signup">Try a different username</a>'
 
-
     # Provide a list of existing groups for the user to choose from during signup
     groups = Group.query.all()
     return render_template('signup.html', groups=groups)
-
 
 
 @app.route('/users')
@@ -342,18 +241,28 @@ def user_list():
 
 @app.route('/logout')
 def logout():
-    session.pop('username', None)
+
+    session.pop('user_object_dict', None)
+    session.pop('event_id', None)
+    session.pop('distance', None)
+    session.pop('shots_per_target', None)
+    session.pop('target_type', None)
+    session.pop('shooters', None)
+    session.pop('shooters_username', None)
+
     return redirect(url_for('home'))
 
 @app.route('/add_event', methods=['GET', 'POST'])
 def add_event():
-    if 'username' not in session or session['admin'] == False:
+    if 'user_object_dict' not in session:
         print("Admin is False or Username not in session ")
         print(session)
         return redirect(url_for('login'))
+    
+    user_object = get_session_user_object()
 
     if request.method == 'POST':
-        username = session['username']
+        username = user_object.get_username()
         user = User.query.filter_by(username=username).first()
 
         if user:
@@ -435,7 +344,7 @@ def search_users():
 def review_scores():
     return render_template('review_scores.html')
 
-from collections import defaultdict
+
 
 def retrieve_shooting_data(user_id, user):
     scores = Score.query.filter_by(user_id=user_id).all()
@@ -481,6 +390,7 @@ def get_user_scores(user_id):
 
     event_list = retrieve_shooting_data(user_id=user_id, user=user)
 
+
     return jsonify({'events': event_list})
 
 
@@ -512,32 +422,18 @@ def add_user_to_event():
 
 @app.route('/run_event', methods=['GET', 'POST'])
 def run_event():
-    if 'username' in session and session['admin'] == False:
-        print("Admin is False or Username not in session ")
-        print(session)
-        return redirect(url_for('login'))
-
-    # Initialize shooters_username outside the if block
-    shooters_username = []
-
-    # Retrieve session details from the Flask session
-    event_id = session.get('event_id')
-    distance = session.get('distance')
-    shots_per_target = session.get('shots_per_target')
-    target_type = session.get('target_type')
-    shooters = session.get('shooters')
-    event_date = session.get('event_date')
-    event_time = session.get('event_time')
-
-    # Check if shooters is not None before using it in the query
-    if shooters is not None:
-        # Fetch user objects from the database based on the IDs
-        users = User.query.filter(User.id.in_(shooters)).all()
-
-        # Extract usernames from the user objects
-        shooters_username = [user.username for user in users]
+    #if 'username' in session and session['admin'] == False:
+    #    print("Admin is False or Username not in session ")
+    #    print(session)
+    #    return redirect(url_for('login'))
     
-    session['shooters_username'] = shooters_username
+    user_object = get_session_user_object()
+
+    try:
+        event_id, distance, shots_per_target, target_type, shooters, event_date, event_time, shooters_username = user_object.run_event(User=User)
+    except:
+        print("This user type cannot run event")
+        redirect(url_for('add_event'))
 
     if not all([event_id, distance, shots_per_target, target_type, shooters, shooters_username]):
         print("event_id:", event_id)
@@ -576,88 +472,19 @@ def run_event():
 
 @app.route('/process_shooter/<int:event_id>', methods=['GET', 'POST'])
 def process_shooter(event_id):
-    if 'username' not in session or session['admin'] == False:
-        print("Admin is False or Username not in session ")
+    if 'user_object_dict' not in session:
+        print("User Object Dictionary Not In Session")
         print(session)
         return redirect(url_for('login'))
+
     
-    event_id = session.get('event_id')
-    distance = session.get('distance')
-    shots_per_target = session.get('shots_per_target')
-    target_type = session.get('target_type')
-    shooters = session.get('shooters')
-    shooters_username = session.get('shooters_username')
+    user_object = get_session_user_object()
 
-    print("event_id:", event_id)
-    print("distance:", distance)
-    print("shot_per_target:", shots_per_target)
-    print("target_type:", target_type)
-    print("shooters:", shooters)
-    print("shooters_username:", shooters_username)
+    try:
+        event_id, shot_data, shots_per_target = user_object.process_shooter(db, User, Event, Format, Score, Shot)
+    except:
+        print("This user is not able to run the process shooter method")
 
-    # Initialize a dictionary to store shot data for each user
-    shot_data = {}
-
-    if request.method == 'POST':
-        selected_users = request.form.getlist('selected_users[]')
-        print(selected_users)
-
-        for username in selected_users:
-            user_shot_data = []
-            for i in range(1, shots_per_target + 1):
-                shot_key = f'user_{username}_shot_{i}'
-                print("shot key:", shot_key)
-                shot_score = int(request.form.get(shot_key, 0))
-                print("shot score:", shot_score)
-                user_shot_data.append(shot_score)
-            shot_data[username] = user_shot_data
-
-            # Add shot data to the database
-            user = User.query.filter_by(username=username).first()
-            if user:
-                event = Event.query.get(event_id)
-                event_format = Format.query.filter_by(shots_per_target=shots_per_target, target_type=target_type, distance=distance).first()
-                
-                if event and event_format:
-                    average_score = statistics.mean(user_shot_data)
-                    print(average_score)
-                    score = Score(event_id=event.id, user_id=user.id, format_id=event_format.id, average=average_score)
-                    db.session.add(score)
-                    db.session.commit()
-
-                    for shot_score in user_shot_data:
-                        shot = Shot(score_id=score.id, shot_score=shot_score)
-                        db.session.add(shot)
-                        db.session.commit()
-
-                ## Calculate Shot Statistics 
-
-
-            else:
-                print("Shooting event or format not found")
-        else:
-            print("User not found")
-
-        # Now shot_data is a dictionary where keys are usernames and values are lists of shot scores
-        print("Shot data:", shot_data)
-
-        # Here you can process the shot data and save it to the database
-
-        ## Get event
-
-        #event = Event.query.get(id=event_id).first()
-        #event_shooters 
-        #scores = Score.query.get(event_id=event_id).all()
-
-        #print(scores)
-            
-            # for each user in event
-                # get all shot scores
-                # add all shot scores
-                # find total number of shots taken != shots per target 
-                # calculate average
-                # update database 
-        
 
     return render_template('process_shooter.html', event_id=event_id, shot_data=shot_data, shots_per_target=shots_per_target)
 

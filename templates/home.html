@@ -13,8 +13,8 @@
 <body>
     {% include 'navbar.html' %}
 
-    {% if 'username' in session %}
-        <p>Hello, {{ session["username"] }}! <a href="{{ url_for('logout') }}">Logout</a></p>
+    {% if 'user_object_dict' in session %}
+        <p>Hello, {{ username }}! <a href="{{ url_for('logout') }}">Logout</a></p>
     {% else %}
         <p>You are not logged in. <a href="{{ url_for('login') }}">Login</a> or <a href="{{ url_for('signup') }}">Sign up</a></p>
     {% endif %}
