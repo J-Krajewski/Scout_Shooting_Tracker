@@ -116,8 +116,6 @@ def get_session_user_object():
     group_id = user_object_dict['_SessionUser__group_id']
     type = user_object_dict['_SessionUser__type']
 
-
-
     if type == "leader":
         user_object = SessionLeader(id, username, group_id, type, Group)
     elif type == "scout":
@@ -359,9 +357,12 @@ def retrieve_shooting_data(user_id, user):
     else:
         print("User not found.")
 
+    averages = []
+
     for score in scores:
         shots = Shot.query.filter_by(score_id=score.id).all()
         shot_scores = [shot.shot_score for shot in shots]
+        
         # find event information from event_id 
         searched_event = Event.query.filter_by(id=score.event_id).first()
         event_date = searched_event.date
@@ -369,7 +370,7 @@ def retrieve_shooting_data(user_id, user):
         
         format = Format.query.filter_by(id=score.format_id).first()
         print(format)
-        
+        averages.append(score.average)
 
         event_dict[(score.event_id, score.format_id, event_date, event_time, 
                     format.shots_per_target, format.target_type, format.distance)].append(shot_scores)
@@ -378,7 +379,9 @@ def retrieve_shooting_data(user_id, user):
     event_list = [{'shooter_name': shooter_name, 'event_id': event[0], 'format_id': event[1], 
                      'event_date': event[2], "event_time": event[3],
                      'spt': event[4], 'target_type': event[5], 'distance': event[6],
-                     'shot_scores': scores} for event, scores in event_dict.items()]
+                     'shot_scores': scores, 'averages': averages} for event, scores in event_dict.items()]
+    
+   
 
     print("Shooting Event List",event_list)
 

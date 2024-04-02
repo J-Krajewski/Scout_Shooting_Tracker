@@ -12,6 +12,11 @@
 - [ ] make format a selection rather than new input every time, like search for format first before adding a new one 
 
 
+# Matthew TODO:
+- [ ] Add Description To Event
+- [ ] Add Time to Event
+ 
+
 
 # Extra Features (would be nice)
 - Badges/qualifications 

@@ -64,6 +64,7 @@
                             var events = response.events;
                             var html = '';
                             //$('#selectedUserTitle').text('Score for User: ' + userName);
+                            count = 0
                             events.forEach(function(event){
                                 $('#selectedUserTitle').text('Shooting Stats for ' + event.shooter_name);
                                 html += '<h3>' + 
@@ -71,8 +72,9 @@
                                     ' Target Type: '+ event.target_type + ' </h3>';
                                 html += '<ul>';
                                 event.shot_scores.forEach(function(shot_scores){
-                                    html += '<li>Shot Scores: ' + shot_scores.join(', ') + '</li>';
-                                });
+                                    html += '<li>Shot Scores: ' + shot_scores.join(', ') + " - Average: " + event.averages[count] + '</li>';
+                                    count = count + 1
+                                }); 
                                 html += '</ul>';
                             });
                             $('#scoresList').html(html);
