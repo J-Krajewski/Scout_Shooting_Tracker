@@ -17,7 +17,7 @@ class SessionUser():
         self.__username = username
         self.__group_id = group_id
         self.__type = type
-        self.__group_disrict = Group.query.filter_by(id = self.__group_id).first().district
+        self.__group_district = Group.query.filter_by(id = self.__group_id).first().district
         self.__group_number = Group.query.filter_by(id = self.__group_id).first().number
 
     # Any user should be able to add a new scout user 
@@ -55,6 +55,9 @@ class SessionScout(SessionUser):
         super().__init__(id, username, group_id, type, Group)
         self.__admin = False
         self.__priviledges = []
+
+    def my_profile(self, User):
+        return super().my_profile(User)
 
     def get_username(self):
         return super().get_username()
@@ -155,7 +158,9 @@ class SessionLeader(SessionUser):
             print("Shot data:", shot_data)
 
         return event_id, shot_data, shots_per_target
-
+    
+    def my_profile(self, User):
+        return super().my_profile(User)
 
     def get_username(self):
         return super().get_username()
@@ -191,6 +196,9 @@ class SessionDistrictComissioner(SessionUser):
             print(f"Added new group: {district}, Number: {number}")
         else:
             print(f"Group already exists: {district}, Number: {number}")
+
+    def my_profile(self, User):
+        return super().my_profile(User)
 
     def get_username(self):
         return super().get_username()

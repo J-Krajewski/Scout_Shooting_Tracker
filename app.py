@@ -116,6 +116,8 @@ def get_session_user_object():
     group_id = user_object_dict['_SessionUser__group_id']
     type = user_object_dict['_SessionUser__type']
 
+
+
     if type == "leader":
         user_object = SessionLeader(id, username, group_id, type, Group)
     elif type == "scout":
@@ -505,6 +507,8 @@ def my_profile():
         return redirect(url_for('login'))
     
     user_object = get_session_user_object()
+
+    
     #username = user_object.get_username()
     #user_id = user_object.get_id()
     
