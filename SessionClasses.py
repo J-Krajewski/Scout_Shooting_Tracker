@@ -12,11 +12,13 @@ import statistics
     
 class SessionUser():
 
-    def __init__(self, id, username, group_id, type): # Constructor or initialiser 
+    def __init__(self, id, username, group_id, type, Group): # Constructor or initialiser 
         self.__id = id
         self.__username = username
         self.__group_id = group_id
         self.__type = type
+        self.__group_disrict = Group.query.filter_by(id = self.__group_id).first().district
+        self.__group_number = Group.query.filter_by(id = self.__group_id).first().number
 
     # Any user should be able to add a new scout user 
     def add_new_scout(username, password, group_id, type, db, User):
@@ -37,10 +39,20 @@ class SessionUser():
     def get_id(self):
         return self.__id
     
+    def my_profile(self, User):
+
+        user_data = User.query.filter_by(id = self.__id).first()
+        n = self.__group_number
+        suffix = { 1: "st", 2: "nd", 3: "rd" }.get(n if (n < 20) else (n % 10), 'th')
+        group_name = str(str(n) + suffix + " " + self.__group_district)
+        print(group_name)
+
+        return self.__username, group_name, self.__id, user_data
+
 class SessionScout(SessionUser):
 
-    def __init__(self, id, username, group_id, type):
-        super().__init__(id, username, group_id, type)
+    def __init__(self, id, username, group_id, type, Group):
+        super().__init__(id, username, group_id, type, Group)
         self.__admin = False
         self.__priviledges = []
 
@@ -52,8 +64,8 @@ class SessionScout(SessionUser):
 
 class SessionLeader(SessionUser):
 
-    def __init__(self, id, username, group_id, type):
-        super().__init__(id, username, group_id, type)
+    def __init__(self, id, username, group_id, type, Group):
+        super().__init__(id, username, group_id, type, Group)
         self.__admin = True
         self.__priviledges = ["start_shooting"]
 
@@ -154,8 +166,8 @@ class SessionLeader(SessionUser):
     
 class SessionDistrictComissioner(SessionUser):
 
-    def __init__(self, id, username, group_id, type):
-        super().__init__(id, username, group_id, type)
+    def __init__(self, id, username, group_id, type, Group):
+        super().__init__(id, username, group_id, type, Group)
         self.__admin = True
         self.__priviledges = ["add_district", "add_leader", "delete_leader", "delete_district"]
 

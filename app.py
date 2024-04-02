@@ -117,11 +117,11 @@ def get_session_user_object():
     type = user_object_dict['_SessionUser__type']
 
     if type == "leader":
-        user_object = SessionLeader(id, username, group_id, type)
+        user_object = SessionLeader(id, username, group_id, type, Group)
     elif type == "scout":
-        user_object = SessionScout(id, username, group_id, type)
+        user_object = SessionScout(id, username, group_id, type, Group)
     elif type == "district comissioner":
-        user_object = SessionDistrictComissioner(id, username, group_id, type)
+        user_object = SessionDistrictComissioner(id, username, group_id, type, Group)
     else:
         return "NO USER OBJECT CREATED"
         
@@ -130,11 +130,11 @@ def get_session_user_object():
 def create_session_subclass(id, username, group_id, type):
     # Create a user subclass for the session
     if type == "scout":
-        session_user = SessionScout(id, username, group_id, type)
+        session_user = SessionScout(id, username, group_id, type, Group)
     elif type == "leader":
-        session_user = SessionLeader(id, username, group_id, type)
+        session_user = SessionLeader(id, username, group_id, type, Group)
     elif type == "district comissioner":
-        session_user = SessionDistrictComissioner(id, username, group_id, type)
+        session_user = SessionDistrictComissioner(id, username, group_id, type, Group)
 
     return session_user
 
@@ -505,20 +505,20 @@ def my_profile():
         return redirect(url_for('login'))
     
     user_object = get_session_user_object()
-    username = user_object.get_username()
-    user_id = user_object.get_id()
+    #username = user_object.get_username()
+    #user_id = user_object.get_id()
     
     #username = session.get("username")
     #user_id = session.get("user_id")
 
-    user_data = User.query.filter_by(id = user_id).first()
-    user_group_id = user_data.group_id
-    user_group_data = Group.query.filter_by(id = user_group_id).first()
-    n = user_group_data.number
-    suffix = { 1: "st", 2: "nd", 3: "rd" }.get(n if (n < 20) else (n % 10), 'th')
-    group_name = str(str(user_group_data.number) + suffix + " " + user_group_data.district)
-    print(group_name)
-
+    #user_data = User.query.filter_by(id = user_id).first()
+    #user_group_id = user_data.group_id
+    #user_group_data = Group.query.filter_by(id = user_group_id).first()
+    #n = user_group_data.number
+    #suffix = { 1: "st", 2: "nd", 3: "rd" }.get(n if (n < 20) else (n % 10), 'th')
+    #group_name = str(str(user_group_data.number) + suffix + " " + user_group_data.district)
+    #print(group_name)
+    username, group_name, user_id, user_data = user_object.my_profile(User)
     event_list = retrieve_shooting_data(user_id=user_id, user=user_data)
     
     return render_template('my_profile.html', 
