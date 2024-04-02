@@ -17,6 +17,7 @@
     
     <div id="events-container">
         {% for event in event_list %}
+        
         <div class="event-box">
             <h3>Event Date & Time: {{ event.event_date }} {{ event.event_time }}</h3>
             
@@ -30,7 +31,7 @@
             </div>
             {% endfor %}
 
-            <p> Average Score: {{ event.average }}</p>
+            <p> Average Score: {{ event.averages }}</p>
 
         </div>
         {% endfor %}

@@ -4,17 +4,15 @@
 - [ ] styling 
 - [ ] add dropdown list for target type - Matthew
 - [x] review scores
-- [ ] user profile (see own scores)
+- [x] user profile (see own scores)
 - [ ] add input validation to event details - Matthew
-- [ ] event dates to database
-- [ ] event dates to run and add session
+- [x] event dates to database
+- [x] event dates to run and add session
 - [x] event dates to search users
-- [ ] make format a selection rather than new input every time, like search for format first before adding a new one 
-
-
-# Matthew TODO:
-- [ ] Add Description To Event
-- [ ] Add Time to Event
+- [ ] make format a selection rather than new input every time, like search for format first before adding a new one - Matthew
+- [ ] Add Description To Event - Matthew
+- [ ] Add Time to Event - Matthew
+- [x] Made Session Details OOP
  
 
 
