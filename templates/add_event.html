@@ -77,7 +77,15 @@
         <input type="number" name="shots_per_target" required>
         <br>
         <label for="target_type">Target Type:</label>
-        <input type="text" name="target_type" required>
+        <select name="target_type" required>
+            <option value="">Select Target Type</option>
+            <option value="Paper targets">Paper targets</option>
+            <option value="Knockdown targets">Knockdown targets</option>
+            <option value="Spinner targets">Spinner targets</option>
+            <option value="Reactive targets">Reactive targets</option>
+            <option value="Silhouette targets">Silhouette targets</option>
+            <option value="Field targets">Field targets</option>
+        </select>
         <br>
         <label for="description">Description:</label>
         <input type="text" name="description" required>

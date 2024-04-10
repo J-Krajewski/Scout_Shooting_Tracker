@@ -90,6 +90,18 @@ with app.app_context():
         else:
             print(f"User already exists: {username}")
 
+    def add_new_format(shots_per_target, target_type, distance):
+        existing_format = Format.query.filter_by(shots_per_target=shots_per_target, target_type=target_type, distance=distance).first()
+        if not existing_format:
+            new_format = Format(shots_per_target=shots_per_target, target_type=target_type, distance=distance)
+            db.session.add(new_format)
+            db.session.commit()
+            print(f"Added new Format: Shots Per Tartget: {shots_per_target}, Target Type: {target_type}, Distance: {distance}")
+            return True
+        else:
+            print(f"Format already exists: Shots Per Tartget: {shots_per_target}, Target Type: {target_type}, Distance: {distance}") 
+            return False          
+
     ## For testing purposes
     add_new_group("Whitley Bay", 9)
     add_new_group("Teddington", 3)
@@ -97,6 +109,8 @@ with app.app_context():
     add_new_user("scout2", "password2", False, 1, "scout") 
     add_new_user("leader", "leader", True, 1, "leader") 
     add_new_user("dc", "dc", True, 1, "district comissioner") 
+    add_new_format(3, "Paper targets", 10)
+    add_new_format(2, "Paper targets", 5)
 
 def get_session_user_object():
 
@@ -292,10 +306,11 @@ def add_event():
 
             # Adding data to respective tables
             new_event = Event(description=description, date=date, time=time)
-            new_format = Format(target_type=target_type, shots_per_target=shots_per_target, distance=distance) 
+            #new_format = Format(target_type=target_type, shots_per_target=shots_per_target, distance=distance) 
+            add_new_format(shots_per_target=shots_per_target, target_type=target_type, distance=distance)
 
             db.session.add(new_event)
-            db.session.add(new_format)
+            #db.session.add(new_format)
             db.session.commit()
 
             # Store event details in the Flask session for use in run_event
@@ -315,8 +330,8 @@ def add_event():
             return redirect(url_for('run_event'))
 
     groups = Group.query.all()
-
-    return render_template('add_event.html', groups=groups)
+    formats = Format.query.all()
+    return render_template('add_event.html', groups=groups, formats=formats)
 
     
 
