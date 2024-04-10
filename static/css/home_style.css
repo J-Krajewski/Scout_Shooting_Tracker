@@ -1,0 +1,21 @@
+/* main.css */
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+img.logo {
+    width: 100px; /* Set the width of the image */
+    position: fixed; /* Set the position to fixed */
+    top: 20px; /* Adjust the top position */
+    right: 20px; /* Adjust the right position */
+    z-index: 999; /* Ensure the image stays on top */
+}

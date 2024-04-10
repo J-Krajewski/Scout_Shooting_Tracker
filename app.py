@@ -407,8 +407,6 @@ def retrieve_shooting_data(user_id, user):
                      'spt': event[4], 'target_type': event[5], 'distance': event[6],
                      'shot_scores': scores, 'averages': averages} for event, scores in event_dict.items()]
     
-   
-
     print("Shooting Event List",event_list)
 
     return event_list

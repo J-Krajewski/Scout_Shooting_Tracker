@@ -1,0 +1,70 @@
+/* add_shooting_event_style.css */
+
+body {
+    font-family: 'Roboto', sans-serif; /* Apply Roboto font */
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 20px;
+    color: #007bff; /* Change title color */
+}
+
+form {
+    margin: 20px auto;
+    width: 80%;
+    max-width: 600px; /* Set maximum width for the form */
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+}
+
+select {
+    background-color: #fff; /* Ensure select box has a white background */
+}
+
+#searchResults {
+    margin-top: 10px;
+}
+
+.search-result {
+    cursor: pointer;
+    padding: 5px 10px;
+    background-color: #f2f2f2;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.search-result:hover {
+    background-color: #e0e0e0;
+}
+
+button[type="submit"] {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button[type="submit"]:hover {
+    background-color: #0056b3;
+}
