@@ -154,6 +154,15 @@ def create_session_subclass(id, username, group_id, type):
 
 @app.route('/')
 def home():
+
+    session.pop('event_id', None)
+    session.pop('distance', None)
+    session.pop('shots_per_target', None)
+    session.pop('target_type', None)
+    session.pop('shooters', None)
+    session.pop('shooters_username', None)
+    print(session)
+
     # Retrieve the user object
     user_object = get_session_user_object()
 

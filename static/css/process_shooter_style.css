@@ -1,7 +1,26 @@
+/* process_shooter_style.css */
+
+body {
+    font-family: 'Roboto', sans-serif; /* Apply Roboto font */
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 20px;
+    color: #007bff; /* Change title color */
+}
+
+p {
+    margin-left: 20px;
+}
+
 table {
     margin: 3px;
     border-collapse: collapse;
     width: 100%;
+    font-family: 'Roboto', sans-serif; /* Apply Roboto font to table */
 }
 
 th, td {
@@ -20,4 +39,18 @@ tr:nth-child(even) {
 
 tr:nth-child(odd) {
     background-color: #c2d4e4;
+}
+
+a.button {
+    display: inline-block;
+    margin: 10px;
+    padding: 10px 20px;
+    text-decoration: none;
+    color: #fff;
+    background-color: #007bff;
+    border-radius: 5px;
+}
+
+a.button:hover {
+    background-color: #0056b3;
 }
