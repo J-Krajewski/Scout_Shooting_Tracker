@@ -165,6 +165,8 @@ def home():
 
     return render_template('home.html', username=username)
 
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -549,6 +551,18 @@ def my_profile():
                            event_list=event_list
                            )
  
+@app.route('/help')
+def help_page():
+    # Read the content of target_info.txt
+    try:
+        with open('target_info.txt', 'r') as file:
+            target_info = file.read()
+    except FileNotFoundError:
+        target_info = "No information available."
+
+    return render_template('help.html', target_info=target_info)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

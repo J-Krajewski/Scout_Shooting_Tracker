@@ -15,6 +15,5 @@
 - [x] Made Session Details OOP
  
 
-
 # Extra Features (would be nice)
 - Badges/qualifications 
